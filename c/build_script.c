@@ -197,7 +197,7 @@ void Create_script()
             && NULL       == fv->zipfile) {
             fprintf (script,
                     "cd \"$SKELS\" && rm -f %s.zip && "
-                    "zip %s %s/* && cd $OLDPWD\n\n",
+                    "zip -r %s %s/* && cd $OLDPWD\n\n",
                     fv->name, fv->name, fv->name);
         }
     })
