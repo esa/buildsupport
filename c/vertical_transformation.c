@@ -223,7 +223,8 @@ void write_thread_implementation(FV *fv)
    FOREACH(p, Process, get_system_ast()->processes, {
        FOREACH(b, Aplc_binding, p->bindings, {
            if (b->fv == fv &&
-                   !strcmp(p->cpu->platform_name, "PLATFORM_NATIVE")) {
+	       ((!strcmp(p->cpu->platform_name, "PLATFORM_NATIVE"))
+		|| (!strcmp(p->cpu->platform_name, "PLATFORM_LINUX_DLL")))) {
                stack_size = 100;
            }
        });
