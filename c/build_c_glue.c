@@ -25,6 +25,10 @@ static FILE *vm_if     = NULL,
 
 static int count_calling_threads = 0;
 
+// Brave FPGA allows to have dual implementation of functions (VHDL and native)
+// They are detected the AADL property "FPGA_Modes" is set
+static bool brave_fpga = false;
+
 /* Adds header to vm_if files */
 void c_preamble(FV * fv)
 {
@@ -292,16 +296,41 @@ void add_PI_to_c_vm_if(Interface * i)
     }
 
     FOREACH(p, Parameter, i->in, {
-            fprintf(vm_if,
-                    "    if (0 != Decode_%s_%s (&IN_%s, pmy_%s, size_my_%s)) {\n"
-                    "        #ifdef __unix__\n"
-                    "            printf(\"\\nError Decoding %s\\n\");\n"
-                    "        #endif\n"
-                    "        return;\n"
-                    "    }\n\n",
-                    BINARY_ENCODING(p),
-                    p->type, p->name, p->name, p->name, p->type);}
-    );
+        fprintf(vm_if,
+                "    if (0 != Decode_%s_%s (&IN_%s, pmy_%s, size_my_%s)) {\n"
+                "        #ifdef __unix__\n"
+                "            printf(\"\\nError Decoding %s\\n\");\n"
+                "        #endif\n"
+                "        return;\n"
+                "    }\n\n",
+                BINARY_ENCODING(p),
+                p->type, p->name, p->name, p->name, p->type);
+    });
+
+    if (brave_fpga) {
+        fprintf(vm_if, "   /* Calling Brave VHDL dispatcher function */\n"
+                       "   if (0 == %s_%s_Brave_Dispatch (",
+                       i->parent_fv->name, i->name);
+        comma = false;
+        // add encoded (raw) in/out params, if vhdl modes apply,
+        // corresponding B mapper will generate code to decode them
+        FOREACH(p, Parameter, i->in, {
+           fprintf(vm_if, "%spmy_%s, size_my_%s",
+                           comma ? ", ":"",
+                           p->name,
+                           p->name);
+           comma = true;
+        });
+        FOREACH(p, Parameter, i->out, {
+           fprintf(vm_if, "%spmy_%s, psize_my_%s",
+                           comma ? ", ":"",
+                           p->name,
+                           p->name);
+           comma = true;
+        });
+        // dispatch function shall return 0 if VHDL code was executed
+        fprintf(vm_if, ")) return;\n\n");
+    }
 
     if (qgenc == i->parent_fv->language) {
         /* h. Add a call to the user-defined function passing the decoded input as parameter */
@@ -334,6 +363,7 @@ void add_PI_to_c_vm_if(Interface * i)
     });
     fprintf(vm_if_h, ");\n");
 
+    // Add parameters to the call of the functions
     comma = false;
     FOREACH(p, Parameter, i->in, {
         fprintf(vm_if, "%s&IN_%s",
@@ -349,7 +379,7 @@ void add_PI_to_c_vm_if(Interface * i)
         }
     );
 
-    fprintf(vm_if, ");\n\n");
+    fprintf(vm_if, ");\n\n");  // Enf of call to user code
 
     /* i. Encode each OUT param */
     if (NULL != i->out) {
@@ -607,7 +637,7 @@ void add_RI_to_c_invoke_ri(Interface * i)
                 asynch == i->synchronism ? "async_" : "", i->parent_fv->name,
                 i->name);
 
-        /* Declare external function (may be in Ada, so no file to include */
+        /* Declare external function (may be in Ada, so no file to include) */
         fprintf(invoke_ri, "    extern void %s(", name);
         bool comma = false;
         FOREACH(_, Parameter, i->in, {
@@ -714,6 +744,19 @@ void GLUE_C_Backend(FV * fv)
                 }
         );
     }
+
+    // Detect Brave FPGAs (see note at the top of the file)
+    brave_fpga = false;
+    FOREACH (prop, AADL_Property, fv->properties, {
+        char *name = string_to_lower (prop->name);
+        //printf("[PROPERTY] %s = %s\n", prop->name, prop->value);
+        if (!strcmp(name, "taste_iv_properties::fpga_modes")) {
+            printf("[INFO] Function %s uses BRAVE VHDL modes: %s\n",
+                    fv->name,
+                    prop->value);
+            brave_fpga = true;
+        }
+    });
 
     if (false == fv->is_component_type) {
         if (c           == fv->language
