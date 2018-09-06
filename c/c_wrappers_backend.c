@@ -364,7 +364,12 @@ void add_async_PI_to_c_wrappers(Interface * i)
         char *distant_fv = NULL;
         FOREACH(interface, Interface, i->parent_fv->interfaces, {
             if (RI == interface->direction
-                && !strcmp(interface->distant_name, i->distant_name)
+                // bug below ref mantis #800
+                // i-> distant_name refers to the original distant name of
+                // the RI before the VT, it is the one to use. the distant
+                // name of "interface" may be pointing to the wrong function!!
+                //&& !strcmp(interface->distant_name, i->distant_name)
+                && !strcmp(interface->name, i->distant_name)
                 && synch == interface->synchronism) {
                 distant_fv = interface->distant_fv;
             }
