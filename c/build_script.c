@@ -155,7 +155,7 @@ void Create_script()
                     "cd \"$SKELS\"/%s && "
                     "opengeode --toAda system_structure.pr ../%s/%s.pr "
                     "&& rm -f %s.ad* "
-                    "&& cd $OLDPWD\n\n",
+                    "&& cd $OLDPWD || exit -1\n\n",
                     fv->name,
                     instance_of,
                     fv->name,
@@ -168,7 +168,7 @@ void Create_script()
                     "# Generate code for OpenGEODE function %s\n"
                     "cd \"$SKELS\"/%s && "
                     "opengeode --toAda %s.pr system_structure.pr "
-                    "&& cd $OLDPWD\n\n",
+                    "&& cd $OLDPWD || exit -1\n\n",
                     fv->name, fv->name, fv->name);
         }
         }
@@ -181,7 +181,7 @@ void Create_script()
                     "# Generate code for VDM function %s\n"
                     "# cd \"$SKELS\"/%s && "
                     "vdm2c %s.vdmpp %s_Interface.vdmpp out.vdm"
-                    "&& cd $OLDPWD\n\n",
+                    "&& cd $OLDPWD || exit -1\n\n",
                     fv->name, fv->name, fv->name, fv->name);
         }
         /* TODO call B mappers or add --subVdm in orchestrator */
@@ -197,7 +197,7 @@ void Create_script()
             && NULL       == fv->zipfile) {
             fprintf (script,
                     "cd \"$SKELS\" && rm -f %s.zip && "
-                    "zip -r %s %s/* && cd $OLDPWD\n\n",
+                    "zip -r %s %s/* && cd $OLDPWD || exit -1\n\n",
                     fv->name, fv->name, fv->name);
         }
     })
