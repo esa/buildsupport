@@ -45,5 +45,5 @@ extern void  Backdoor_backend(System *);
 extern void  Generate_Build_Script();
 extern void  Generate_Full_ConcurrencyView(Process_list *, char *);
 extern void  Process_Driver_Configuration(Process *);
-extern void  Generate_Python_AST(System *, char *);
+extern void  Generate_Python_AST(System *, char *, char *);
 extern void  System_Config(System *);

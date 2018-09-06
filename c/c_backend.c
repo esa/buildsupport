@@ -141,7 +141,7 @@ void C_End()
                 GLUE_RTDS_Backend(fv);
                 GLUE_MiniCV_Backend(fv);
                 GLUE_C_Backend(fv);
-                Generate_Python_AST(get_system_ast(), NULL);
+                Generate_Python_AST(get_system_ast(), NULL, "iv.py");
 
             }
         })
@@ -164,10 +164,10 @@ void C_End()
 
         /*
          * Debug mode (userflag -test) : dump the result of the transformation
-         * TODO: generate an AADL model (equivalent to the Concurrency View)
          */
         if (get_system_ast()->context->test) {
             Dump_model(get_system_ast());
+            Generate_Python_AST(get_system_ast(), NULL, "iv2.py");
         }
 
         /*

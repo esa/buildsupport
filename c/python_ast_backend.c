@@ -10,14 +10,14 @@
 #include "my_types.h"
 #include "practical_functions.h"
 
-void Generate_Python_AST(System *s, char *dest_directory)
+void Generate_Python_AST(System *s, char *dest_directory, char *output_name)
 {
     FILE *py = NULL;
     if (NULL == dest_directory) {
         dest_directory = s->context->output;
     }
 
-    create_file (dest_directory, "iv.py", &py);
+    create_file (dest_directory, output_name, &py);
     assert (NULL != py);
 
     fprintf (py,
