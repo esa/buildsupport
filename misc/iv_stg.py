@@ -3,6 +3,7 @@
 from collections import defaultdict
 import stringtemplate3
 import iv
+import sys
 
 STG = None
 
@@ -19,7 +20,11 @@ initialize_stg()
 
 tpl = new("interface_view")
 
-tpl['arrsFunctNames'] = iv.functions.keys()
+#tpl['arrsFunctNames'] = iv.functions.keys()
+# allow user to filter out function names
+# they will still appear, but as bubbles
+tpl['arrsFunctNames'] = [fName for fName in iv.functions.keys()
+                         if fName.lower() not in sys.argv[1:]]
 
 
 connections = []  #  type: List[str]
