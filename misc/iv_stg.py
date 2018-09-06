@@ -30,10 +30,14 @@ tpl['arrsFunctNames'] = [fName for fName in iv.functions.keys()
 connections = []  #  type: List[str]
 for fromName, content in iv.functions.viewitems():
     group = defaultdict(list)
+    if fromName in sys.argv[1:]:
+        continue
     for iName, iContent in content['interfaces'].viewitems():
         if iContent['direction'] == iv.RI:
             group[iContent['distant_fv']].append(iName)
     for destName, destContent in group.viewitems():
+        if destName in sys.argv[1:]:
+            continue
         tplConn = new("connection")
         tplConn['sFrom'] = fromName
         tplConn['sTo'] = destName
