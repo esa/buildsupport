@@ -26,7 +26,7 @@ static FILE *vm_if     = NULL,
 static int count_calling_threads = 0;
 
 // Brave FPGA allows to have dual implementation of functions (VHDL and native)
-// They are detected the AADL property "FPGA_Modes" is set
+// They are detected the AADL property "FPGA_Configurations" is set
 static bool brave_fpga = false;
 
 /* Adds header to vm_if files */
@@ -750,7 +750,7 @@ void GLUE_C_Backend(FV * fv)
     FOREACH (prop, AADL_Property, fv->properties, {
         char *name = string_to_lower (prop->name);
         //printf("[PROPERTY] %s = %s\n", prop->name, prop->value);
-        if (!strcmp(name, "taste_iv_properties::fpga_modes")) {
+        if (!strcmp(name, "taste_iv_properties::fpga_configurations")) {
             printf("[INFO] Function %s uses BRAVE VHDL modes: %s\n",
                     fv->name,
                     prop->value);
