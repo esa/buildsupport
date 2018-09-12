@@ -31,12 +31,14 @@ void Create_New_SDL_Structure(FV * fv)
 
     /* OpenGEODE Skeletons require iv.py and DataView.py to be present in the working directory */
 //   Generate_Python_AST(get_system_ast(), path, "iv.py");
-    char *dataview_uniq = getASN1DataView();
-    char *dataview_path = getDataViewPath();
+    // Create folder for the SDL function
+    mkdir(path, 0700);   // 00700 = S_IRWXU
+    char *dataview_uniq = make_string ("dataview-uniq.asn"); // getASN1DataView();
+    char *dataview_path = make_string ("."); // getDataViewPath();
     if (!file_exists (dataview_path, dataview_uniq)) {
-            ERROR ("[INFO] %s/%s not found. Checking for dataview-uniq.asn\n", dataview_path, dataview_uniq);
+            ERROR ("[ERROR] %s/%s not found\n", dataview_path, dataview_uniq);
             free (dataview_uniq);
-            dataview_uniq = make_string ("dataview-uniq.asn");
+            exit(1);
     }
 //
 //   char *command = make_string("mono $(which asn1.exe) -customStg $(taste-config --prefix)/share/asn1scc/python.stg:%s/DataView.py -customStgAstVersion 4 %s/%s", path, dataview_path, dataview_uniq);
@@ -47,6 +49,7 @@ void Create_New_SDL_Structure(FV * fv)
     char *command = make_string("cp \"%s/%s\" %s/", dataview_path, dataview_uniq, path);
     if (system(command)) {
         ERROR ("[ERROR] Command \"%s\" failed in generation of SDL skeleton\n", command);
+        exit(1);
     }
     free(command);
 
