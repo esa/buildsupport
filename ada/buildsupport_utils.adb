@@ -448,7 +448,7 @@ package body Buildsupport_Utils is
       use type Ctxt_Params.Vector;
       use type Interfaces.Vector;
       use type Parameters.Vector;
-      use type Connection_Maps.Map;
+      --  use type Connection_Maps.Map;
       Funcs             : Functions.Vector := Functions.Empty_Vector;
       Routes            : Channels.Vector; --  := Channels.Empty_Vector;
       Routes_Map        : Connection_Maps.Map;
