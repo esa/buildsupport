@@ -583,9 +583,18 @@ void New_Processor (char *name,
     processor->name          = make_string ("%s", name);
     processor->classifier    = make_string ("%s", classifier);
     processor->platform_name = make_string ("%s", platform);
-    processor->envvars       = make_string ("%s", envvars);
-    processor->user_cflags   = make_string ("%s", cflags);
-    processor->user_ldflags  = make_string ("%s", ldflags);
+    if (strlen (envvars) > 0) {
+        processor->envvars       = make_string ("%s", envvars);
+    }
+    else processor->envvars = NULL;
+    if (strlen(cflags) > 0) {
+        processor->user_cflags   = make_string ("%s", cflags);
+    }
+    else processor->user_cflags = NULL;
+    if (strlen(ldflags) > 0) {
+        processor->user_ldflags  = make_string ("%s", ldflags);
+    }
+    else processor->user_ldflags = NULL;
 }
 
 
