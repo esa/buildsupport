@@ -874,14 +874,15 @@ void New_Interface(char *name,
 /* New Provided interface */
 void Add_PI(char *pi)
 {
-   remove_objXXX_suffix (pi, strlen(pi));
+   char *pi_name =
+       make_string ("%.*s", remove_objXXX_suffix(pi, strlen(pi)), pi);
 
    /* Parameters 3 is NULL because a PI's distant FV is irrelevant
     * (there can be several) and parameter 5 is NULL because a PI's
     *  distant name is also irrelevant since there can also
     *  be several callers (thus several different distant names).
    */
-   New_Interface(pi, NULL, NULL, PI);
+   New_Interface(pi_name, NULL, NULL, PI);
 }
 
 /* New Required Interface */
