@@ -772,9 +772,10 @@ void Add_Binding(char *b)
     }
 
     /* Keep compatibility with 1.2 - remove objXXX suffix */
-    remove_objXXX_suffix (b, strlen(b));
+    size_t len = strlen (b);
+    len = remove_objXXX_suffix (b, len);
 
-    binding_name = make_string ("%s", b);
+    binding_name = make_string ("%.*s", len, b);
 
     result_fv = FindFV(binding_name);
 
