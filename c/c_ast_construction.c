@@ -890,28 +890,29 @@ void Add_RI(char *ri,
             char *dist_fv,
             char *dist_name)
 {
-   size_t tmp             = 0;
-   char   *local_name     = ri;
-
    assert (NULL != ri);
    assert (NULL != dist_fv);
    assert (NULL != dist_name);
 
-   tmp = remove_objXXX_suffix (ri, strlen(ri));
-   remove_objXXX_suffix (dist_name, strlen(dist_name));
+   char *ri_name =
+       make_string ("%.*s", remove_objXXX_suffix (ri, strlen(ri)), ri);
+   char *distant_name =
+       make_string ("%.*s",
+          remove_objXXX_suffix (dist_name, strlen(dist_name)),
+          dist_name);
 
    /* If the first 3 characters of the local RI name are "obj" we suppose
     * it is a name generated randomly by TASTE-IV. In that case we replace
     * the local RI name with the name of the remote PI.
     * This is kept only for backward compatibility
     */
-   if (tmp >= 4 && !strncmp (ri, "obj", 3)) {
-        local_name = dist_name;
+   if (strlen(ri_name) >= 4 && !strncmp (ri, "obj", 3)) {
+        ri_name = distant_name;
    }
 
-   New_Interface(local_name,
+   New_Interface(ri_name,
                  dist_fv,
-                 dist_name,
+                 distant_name,
                  RI);
 }
 

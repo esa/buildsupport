@@ -590,6 +590,7 @@ void Propagate_Calling_Thread(Interface *i, FV **fv)
         if (NULL != i->distant_name) {
             res = strchr(i->distant_name, '.');
             if (NULL != res) {
+                //printf ("DISTANT NAME >>>> %s\n", i->distant_name);
                 printf("[preprocessing_backend.c] FIXME\n");
                 *res = '\0';
             }
