@@ -23,21 +23,21 @@
 /* Data shared by the functions of this module */
 
 /* System AST: */
-static System *system_ast = NULL;
+static System *system_ast      = NULL;
 
 /* Temporary AST construction units: */
-static FV *fv = NULL;
-static Interface *interface = NULL;
-static Parameter *parameter = NULL;
-static Aplc_binding *binding = NULL;
-static char *binding_name = NULL;
-static Process *process = NULL;
-static Processor *processor = NULL;
-static Bus *bus = NULL;
-static Device *device = NULL;
-static Connection *connection = NULL;
-static char *search_name = NULL;
-static Device_list *drivers = NULL;
+static FV *fv                  = NULL;
+static Interface *interface    = NULL;
+static Parameter *parameter    = NULL;
+static Aplc_binding *binding   = NULL;
+static char *binding_name      = NULL;
+static Process *process        = NULL;
+static Processor *processor    = NULL;
+static Bus *bus                = NULL;
+static Device *device          = NULL;
+static Connection *connection  = NULL;
+static char *search_name       = NULL;
+static Device_list *drivers    = NULL;
 
 /* Function returning a pointer to the system AST */
 System *get_system_ast()
@@ -46,9 +46,9 @@ System *get_system_ast()
 }
 
 /* Set System name */
-void Set_Root_Node(char *name, size_t len)
+void Set_Root_Node(char *name)
 {
-    build_string(&(system_ast->name), name, len);
+    system_ast->name = make_string ("%s", name);
 }
 
 void Set_Native_Encoding()
@@ -150,17 +150,15 @@ void Set_Debug_Messages()
 }
 
 // Functions in AADL model may contain additional properties, set them in a list
-void Set_Property (char *name, size_t name_len, char *val, size_t val_len)
+void Set_Property (char *name, char *val)
 {
     AADL_Property *property;
 
     property = (AADL_Property *) malloc (sizeof (AADL_Property));
-    assert (NULL != fv && NULL != property && 0 < name_len && 0 < val_len);
-    property->name = NULL;
-    property->value = NULL;
+    assert (NULL != fv && NULL != property);
+    property->name  = make_string ("%s", name);
+    property->value = make_string ("%s", val);
 
-    build_string (&(property->name), name, name_len);
-    build_string (&(property->value), val, val_len);
     APPEND_TO_LIST (AADL_Property, fv->properties, property);
 }
 
@@ -277,10 +275,10 @@ void Set_Language_To_MicroPython()
         fv->language = micropython;
 }
 
-void Set_Zipfile (char *file, size_t len)
+void Set_Zipfile (char *file)
 {
-    assert (NULL != file && 0 < len && NULL != fv);
-    build_string (&(fv->zipfile), file, len);
+    assert (NULL != file && NULL != fv);
+    fv->zipfile = make_string ("%s", file);
 }
 
 void Set_Sync_IF()
@@ -343,9 +341,12 @@ void Set_Period(long long p)
         interface->period = p;
 }
 
-void Set_Context_Variable (char *name, size_t len1, char *type, size_t len2,
-                           char *def, size_t len3, char *mod, size_t len4,
-                           char *file, size_t len5, char *fullNameWithCase)
+void Set_Context_Variable (char *name,
+                           char *type,
+                           char *def,
+                           char *mod,
+                           char *file,
+                           char *fullNameWithCase)
 {
  Context_Parameter *cp = NULL;
  unsigned int i = 0;
@@ -354,40 +355,32 @@ void Set_Context_Variable (char *name, size_t len1, char *type, size_t len2,
 
  assert (NULL != cp);
 
- cp->name = NULL;
- cp->fullNameWithCase = NULL;
- cp->type.name = NULL;
- cp->type.module = NULL;
- cp->type.asn1_filename = NULL;
- cp->value = NULL;
+ cp->name               = make_string ("%s", name);
+ cp->fullNameWithCase   = make_string ("%s", fullNameWithCase);
+ cp->type.name          = make_string ("%s", type);
+ cp->type.module        = make_string ("%s", mod);
+ cp->type.asn1_filename = make_string ("%s", file);
+ cp->value              = make_string ("%s", def);
 
  /* First check the validity of the ASN.1 module name */
- if (!strncmp (mod, "nomodule", len4)) {
+ if (!strncmp (mod, "nomodule", strlen("nomodule"))) {
      ERROR ("[ERROR] The dataview you are using was generated using an old version\n");
      ERROR ("        of the toolchain. You must update it by calling taste-update-data-view\n");
      exit (-1);
  }
- /* Temporary for the SMP2 support until version of taste-IV withtout obj suffixes */
- size_t lenWithSuffix = len1;
  /* Remove any _objXXX suffix on the name field */
- len1 = remove_objXXX_suffix(name, len1);
-
- build_string (&(cp->name), name, len1);
- build_string (&(cp->fullNameWithCase), fullNameWithCase, lenWithSuffix);  // temp: remove when objXX disappears
- build_string (&(cp->type.name), type, len2);
- build_string (&(cp->value), def, len3);
- build_string (&(cp->type.module), mod, len4);
- build_string (&(cp->type.asn1_filename), file, len5);
+ remove_objXXX_suffix(name, strlen(name));
 
  /* Convert '_' to '-' to be ASN.1-compliant */
- for (i=0; i<len4; i++) if ('_' == cp->type.module[i]) cp->type.module[i] = '-';
+ for (i=0; i<strlen(cp->type.module); i++)
+    if ('_' == cp->type.module[i]) cp->type.module[i] = '-';
 
  APPEND_TO_LIST (Context_Parameter, fv->context_parameters, cp);
 }
 
 /* build the WCET string used in VT. */
-void Set_Compute_Time(uint64_t lower, char *unitlower, size_t len2,
-                      uint64_t upper, char *unitupper, size_t len4)
+void Set_Compute_Time(uint64_t lower, char *unitlower,
+                      uint64_t upper, char *unitupper)
 {
     if (NULL == interface) {
         return;
@@ -395,8 +388,8 @@ void Set_Compute_Time(uint64_t lower, char *unitlower, size_t len2,
 
     interface->wcet_low = lower;
     interface->wcet_high = upper;
-    build_string(&(interface->wcet_low_unit), unitlower, len2);
-    build_string(&(interface->wcet_high_unit), unitupper, len4);
+    interface->wcet_low_unit = make_string ("%s", unitlower);
+    interface->wcet_high_unit = make_string ("%s", unitupper);
 }
 
 /* Context-related functions */
@@ -407,18 +400,17 @@ Context *get_context()
     return system_ast->context;
 }
 
-void Set_Interfaceview (char *name, size_t len)
+void Set_Interfaceview (char *name)
 {
-    if (NULL != (system_ast->context) && 0 < len && NULL != name) {
-        build_string(&(system_ast->context)->ifview, name, len);
+    if (NULL != (system_ast->context) && NULL != name) {
+        system_ast->context->ifview = make_string ("%s", name);
     }
-
 }
 
-void Set_Dataview (char *name, size_t len)
+void Set_Dataview (char *name)
 {
-    if (NULL != (system_ast->context) && 0 < len && NULL != name) {
-        build_string (&(system_ast->context)->dataview, name, len);
+    if (NULL != (system_ast->context) && NULL != name) {
+        system_ast->context->dataview = make_string ("%s", name);
     }
 }
 
@@ -471,11 +463,10 @@ void Set_Test()
     }
 }
 
-void Set_Timer_Resolution(char *val, size_t len) {
+void Set_Timer_Resolution(char *val) {
     errno = 0;
     if (NULL != (system_ast->context)) {
-        char *str = make_string("%.*s", len, val);
-        int time_res = (int) strtol(str, (char **)NULL, 10);
+        int time_res = (int) strtol(val, (char **)NULL, 10);
         if (0 != errno) {
             ERROR("[ERROR] Timer resolution must be a valid number\n");
         }
@@ -507,12 +498,13 @@ void Set_PolyorbHI_C()
 
 /* Set the root output directory in the context vector of the AST
  * and create the directory if possible */
-void Set_OutDir(char *o, size_t len)
+void Set_OutDir(char *o)
 {
+    size_t len = strlen (o);
     if (NULL == (system_ast->context))
         return;
 
-    build_string(&(system_ast->context)->output, o, len);
+    system_ast->context->output = make_string ("%s", o);
 
     if (((system_ast->context)->output)[len - 1] != '/'
         && ((system_ast->context)->output)[len - 1] != '\\') {
@@ -530,17 +522,17 @@ void Set_OutDir(char *o, size_t len)
 }
 
 /* Set the stack size used in generated AADL files */
-void Set_Stack(char *val, size_t len)
+void Set_Stack(char *val)
 {
     if (NULL == (system_ast->context))
         return;
-    build_string(&(system_ast->context->stacksize), val, len);
+    system_ast->context->stacksize = make_string ("%s", val);
 }
 
-void Set_Instance_Of(char *component, size_t len)
+void Set_Instance_Of(char *component)
 {
-    assert (0 < len && NULL != fv);
-    build_string (&(fv->instance_of), component, len);
+    assert (NULL != component && NULL != fv);
+    fv->instance_of = make_string ("%s",  component);
 }
 
 void Set_Is_Component_Type()
@@ -556,19 +548,17 @@ void Set_Is_Component_Type()
 
 /* Define a new process (partition in the deployment view) */
 void New_Process(char *procname,
-                 size_t length,
                  char *procid,
-                 size_t lenid,
                  char *node,
-                 size_t lennode,
                  bool coverage)
 {
     Create_Process(&process);
 
     if (NULL != process) {
-        build_string(&(process->name), procname, length);
-        build_string(&(process->identifier), procid, lenid);
-        build_string(&(process->processor_board_name), node, lennode);
+        process->name                 = make_string ("%s", procname);
+        process->identifier           = make_string ("%s", procid);
+        process->processor_board_name = make_string ("%s", node);
+        process->coverage             = coverage;
         if (processor != NULL) {
             process->cpu = processor;
             /* Append the node name to the CPU name */
@@ -576,98 +566,67 @@ void New_Process(char *procname,
             process->cpu->name = make_string ("%s_%s",
                                               process->processor_board_name,
                                               old_cpu_name);
-            //free(old_cpu_name);
         }
-        process->coverage = coverage;
     }
 }
 
-void New_Processor (char *name,       size_t name_length,
-                    char *classifier, size_t classifier_length,
-                    char* platform,   size_t platform_length,
-                    char *envvars,    size_t envvars_length,
-                    char *cflags,     size_t cflags_length,
-                    char *ldflags,    size_t ldflags_length)
+void New_Processor (char *name,
+                    char *classifier,
+                    char *platform,
+                    char *envvars,
+                    char *cflags,
+                    char *ldflags)
 {
     processor = malloc(sizeof(Processor));
     assert(NULL != processor);
 
-    processor->name          = NULL;
-    processor->classifier    = NULL;
-    processor->platform_name = NULL;
-    processor->envvars       = NULL;
-    processor->user_cflags   = NULL;
-    processor->user_ldflags  = NULL;
-
-    build_string(&(processor->name), name, name_length);
-    build_string(&(processor->classifier), classifier,
-                 classifier_length);
-    if (platform_length > 0) {
-        build_string(&(processor->platform_name), platform, platform_length);
-    }
-    if (envvars_length > 0) {
-        build_string(&(processor->envvars), envvars, envvars_length);
-    }
-    if (cflags_length > 0) {
-        build_string(&(processor->user_cflags), cflags, cflags_length);
-    }
-    if (ldflags_length > 0) {
-        build_string(&(processor->user_ldflags), ldflags, ldflags_length);
-    }
+    processor->name          = make_string ("%s", name);
+    processor->classifier    = make_string ("%s", classifier);
+    processor->platform_name = make_string ("%s", platform);
+    processor->envvars       = make_string ("%s", envvars);
+    processor->user_cflags   = make_string ("%s", cflags);
+    processor->user_ldflags  = make_string ("%s", ldflags);
 }
 
 
-void New_Bus(char *name, size_t name_length, char *classifier,
-                   size_t classifier_length)
+void New_Bus(char *name,
+             char *classifier)
 {
     bus = malloc(sizeof(Bus));
     assert (NULL != bus);
 
-        bus->name = NULL;
-        bus->classifier = NULL;
-        build_string(&(bus->name), name, name_length);
-        build_string(&(bus->classifier), classifier,
-                     classifier_length);
+    bus->name       = make_string ("%s", name);
+    bus->classifier = make_string ("%s", classifier);
 }
 
 /* Connections in the deployment view */
-void New_Connection(char *src_system, size_t src_system_length,
-                    char *src_port, size_t src_port_length,
-                    char *busname, size_t bus_length,
-                    char *dst_system, size_t dst_system_length,
-                    char *dst_port, size_t dst_port_length)
+void New_Connection(char *src_system,
+                    char *src_port,
+                    char *busname,
+                    char *dst_system,
+                    char *dst_port)
 {
 
-   src_port_length = remove_objXXX_suffix (src_port, src_port_length);
-   dst_port_length = remove_objXXX_suffix (dst_port, dst_port_length);
+   remove_objXXX_suffix (src_port, strlen(src_port));
+   remove_objXXX_suffix (dst_port, strlen(dst_port));
 
    /* If the first 3 characters of the dst_port name are "obj" we suppose
     * it is a name generated randomly by TASTE-IV. In that case we replace
     * the port name with the name of the source port.
     */
-    if (dst_port_length >= 4 && !strncmp (dst_port, "obj", 3)) {
+    if (strlen(dst_port) >= 4 && !strncmp (dst_port, "obj", 3)) {
                   dst_port = src_port;
-                  dst_port_length = src_port_length;
     }
 
    connection = malloc(sizeof(Connection));
    assert (NULL != connection);
 
-   connection->src_system       = NULL;
-   connection->src_port         = NULL;
-   connection->bus              = NULL;
-   connection->dst_system       = NULL;
-   connection->dst_port         = NULL;
+   connection->src_system       = make_string ("%s", src_system);
+   connection->src_port         = make_string ("%s", src_port);
+   connection->bus              = make_string ("%s", busname);
+   connection->dst_system       = make_string ("%s", dst_system);
+   connection->dst_port         = make_string ("%s", dst_port);
 
-   build_string(&(connection->src_system), src_system, 
-                src_system_length);
-   build_string(&(connection->src_port), src_port, 
-                src_port_length);
-   build_string(&(connection->bus), busname, bus_length);
-   build_string(&(connection->dst_system), dst_system, 
-                dst_system_length);
-   build_string(&(connection->dst_port), dst_port, 
-                dst_port_length);
 }
 
 
@@ -685,75 +644,41 @@ void End_Drivers_Section()
     process = NULL;
 }
 
-void New_Device   (char *name,
-                  size_t   name_length,
-                  char  *classifier,
-                  size_t   classifier_length,
-                  char  *associated_processor,
-                  size_t   associated_processor_length,
-                  char  *configuration,
-                  size_t   configuration_length,
-                  char  *accessed_bus,
-                  size_t   accessed_bus_length,
-                  char  *access_port,
-                  size_t   access_port_length,
-                  char  *asn1_filename,
-                  size_t   asn1_filename_length,
-                  char  *asn1_typename,
-                  size_t   asn1_typename_length, 
-                  char  *asn1_modulename,
-                  size_t   asn1_modulename_length)
+void New_Device (char *name,
+                 char *classifier,
+                 char *associated_processor,
+                 char *configuration,
+                 char *accessed_bus,
+                 char *access_port,
+                 char *asn1_filename,
+                 char *asn1_typename,
+                 char *asn1_modulename)
 {
     device = malloc(sizeof(Device));
     assert (NULL != device);
 
-    device->name                    = NULL;
-    device->classifier              = NULL;
-    device->associated_processor    = NULL;
-    device->accessed_bus            = NULL;
-    device->configuration           = NULL;
-    device->access_port             = NULL;
-    device->asn1_filename           = NULL;
-    device->asn1_typename           = NULL;
-    device->asn1_modulename         = NULL;
+    device->classifier           = make_string ("%s", classifier);
+    device->accessed_bus         = make_string ("%s", accessed_bus);
+    device->configuration        = NULL;
+    device->access_port          = make_string ("%s", access_port);
+    device->asn1_filename        = make_string ("%s", asn1_filename);
+    device->asn1_typename        = make_string ("%s", asn1_typename);
+    device->asn1_modulename      = make_string ("%s", asn1_modulename);
 
     /* Prefix the driver name with the name of the node */
-    device->name = make_string ("%s_%.*s",
+    device->name = make_string ("%s_%s",
                                 process->processor_board_name,
-                                name_length,
                                 name);
 
-    if (strncmp (configuration, "noconf", configuration_length)) {
-            build_string (&(device->configuration), configuration, 
-                    configuration_length);
+    if (strncmp (configuration, "noconf", strlen(configuration))) {
+       device->configuration = make_string ("%s", configuration);
     }
 
-    build_string (&(device->classifier), classifier,
-                    classifier_length);
     /* Prefix CPU name with the name of the node */
-    device->associated_processor = make_string ("%s_%.*s",
-            process->processor_board_name,
-            associated_processor_length,
-            associated_processor);
-    build_string (&(device->accessed_bus), accessed_bus,
-                    accessed_bus_length);
-    build_string (&(device->access_port), access_port,
-                    access_port_length);
-
-    if (strncmp (asn1_filename, "noconf", asn1_filename_length)) {
-            build_string (&(device->asn1_filename), asn1_filename,
-                    asn1_filename_length);
-    }
-
-    if (strncmp (asn1_typename, "notype", asn1_typename_length)) {
-            build_string (&(device->asn1_typename), asn1_typename,
-                    asn1_typename_length);
-    }
-
-    if (strncmp (asn1_modulename, "nomod", asn1_typename_length)) {
-            build_string (&(device->asn1_modulename), asn1_modulename,
-                    asn1_modulename_length);
-    }
+    device->associated_processor =
+        make_string ("%s_%s",
+                     process->processor_board_name,
+                     associated_processor);
 }
 
 
@@ -761,9 +686,9 @@ void New_Device   (char *name,
 /* Packages added when parsing the deployment view
  * Used to generate list of WITH statements in process.aadl
 */
-void Add_Package(char *pkg_name, size_t len)
+void Add_Package(char *pkg_name)
 {
-   Package *pack = (Package *) make_string("%.*s", len, pkg_name);
+   Package *pack = (Package *) make_string("%s", pkg_name);
    assert (NULL != pack);
    ADD_TO_SET(Package, system_ast->packages, pack);
 }
@@ -827,7 +752,7 @@ void Dump_Bindings()
             printf("\t%s\n", b->fv->name);})
 }
 
-void Add_Binding(char *b, size_t length)
+void Add_Binding(char *b)
 {
     FV *result_fv = NULL;
     Create_Aplc_binding(&binding);
@@ -838,10 +763,9 @@ void Add_Binding(char *b, size_t length)
     }
 
     /* Keep compatibility with 1.2 - remove objXXX suffix */
-    length = remove_objXXX_suffix (b, length);
+    remove_objXXX_suffix (b, strlen(b));
 
-    binding_name = NULL;
-    build_string(&binding_name, b, length);
+    binding_name = make_string ("%s", b);
 
     result_fv = FindFV(binding_name);
 
@@ -869,13 +793,12 @@ void Add_Binding(char *b, size_t length)
 /* FV-related functions */
 
 /* Create a new functional view (starting point) */
-FV *New_FV(char *fv_name, size_t length, char *caseSensitive)
+FV *New_FV(char *fv_name, char *caseSensitive)
 {
     Create_FV(&fv);
     assert (NULL != fv);
-
-    build_string(&(fv->name), fv_name, length);
-    build_string(&(fv->nameWithCase), caseSensitive, length);
+    fv->name         = make_string ("%s", fv_name);
+    fv->nameWithCase = make_string ("%s", caseSensitive);
 
     return fv;
 }
@@ -888,16 +811,16 @@ void Set_Interface_Queue_Size (const unsigned long long s)
 }
 
 /* New interface: set the name and distant FV to which it is connected */
-void New_Interface(char *name,         size_t length,
-                   char *dist_fv,      size_t distant_length,
-                   char *distant_name, size_t dist_name_length,
+void New_Interface(char *name,
+                   char *dist_fv,
+                   char *distant_name,
                    IF_type direction)
 {
     interface = NULL;
     Create_Interface(&interface);
     assert (NULL != interface);
 
-    build_string(&(interface->name), name, length);
+    interface->name = make_string ("%s", name);
 
     /* RI can have a local identifier which may be different from
      * the corresponding PI it is connected to. In that case we set
@@ -905,17 +828,20 @@ void New_Interface(char *name,         size_t length,
      *  the connection will be properly handled
      */
     if (NULL != distant_name) {
-        build_string (&(interface->distant_name),
-                      distant_name, dist_name_length);
+        interface->distant_name = make_string ("%s", distant_name);
+    }
+    else {
+        interface->distant_name = NULL;
     }
 
     /* Set the port name as the interface name, so that if later
      * the interface name is changed, we still know to which port we
      * have to connect it (in case of distributed systems */
-    build_string (&(interface->port_name), name, length);
 
-    if (distant_length > 0) {
-        build_string (&(interface->distant_fv), dist_fv, distant_length);
+    interface->port_name = make_string ("%s", name);
+
+    if (NULL != dist_fv) {
+        interface->distant_fv = make_string ("%s", dist_fv);
     }
     else {
         interface->distant_fv = NULL;
@@ -936,32 +862,32 @@ void New_Interface(char *name,         size_t length,
 }
 
 /* New Provided interface */
-void Add_PI(char *pi, size_t length)
+void Add_PI(char *pi)
 {
-   length = remove_objXXX_suffix (pi, length);
+   remove_objXXX_suffix (pi, strlen(pi));
 
    /* Parameters 3 is NULL because a PI's distant FV is irrelevant
     * (there can be several) and parameter 5 is NULL because a PI's
     *  distant name is also irrelevant since there can also
     *  be several callers (thus several different distant names).
    */
-   New_Interface(pi, length, NULL, 0, NULL, 0, PI);
+   New_Interface(pi, NULL, NULL, PI);
 }
 
 /* New Required Interface */
-void Add_RI(char *ri, size_t length,
-            char *dist_fv, size_t distant_length,
-            char *dist_name, size_t dist_name_length)
+void Add_RI(char *ri,
+            char *dist_fv,
+            char *dist_name)
 {
-   size_t tmp             = 0; 
+   size_t tmp             = 0;
    char   *local_name     = ri;
 
    assert (NULL != ri);
    assert (NULL != dist_fv);
    assert (NULL != dist_name);
 
-   tmp = remove_objXXX_suffix (ri, length);
-   dist_name_length = remove_objXXX_suffix (dist_name, dist_name_length);
+   tmp = remove_objXXX_suffix (ri, strlen(ri));
+   remove_objXXX_suffix (dist_name, strlen(dist_name));
 
    /* If the first 3 characters of the local RI name are "obj" we suppose
     * it is a name generated randomly by TASTE-IV. In that case we replace
@@ -970,65 +896,63 @@ void Add_RI(char *ri, size_t length,
     */
    if (tmp >= 4 && !strncmp (ri, "obj", 3)) {
         local_name = dist_name;
-        length = dist_name_length;
    }
-   else length = tmp;
 
-   New_Interface(local_name, length,
-                 dist_fv, distant_length,
-                 dist_name, dist_name_length,
+   New_Interface(local_name,
+                 dist_fv,
+                 dist_name,
                  RI);
 }
 
 /* add an IN parameter to the list (name respects the case) */
-void Add_In_Param(char *name,     size_t l1,
-                  char *type,     size_t l2,
-                  char *module,   size_t l3,
-                  char *filename, size_t l4)
+void Add_In_Param(char *name,
+                  char *type,
+                  char *module,
+                  char *filename)
 {
-    type = asn2underscore(type, l2);
+    type = asn2underscore(type, strlen(type));
 
     Create_Parameter(&parameter);
     assert (NULL != parameter && NULL != interface);
-    char *param_name = name;
+    char *param_name = make_string ("%s", name);
 
     if (0 == system_ast->context->keep_case) {
         // user does not want to keep case of the parameters
         param_name = string_to_lower(name);
     }
 
-    build_string(&(parameter->name), param_name, l1);
-    build_string(&(parameter->type), type, l2);
-    build_string(&(parameter->asn1_module), module, l3);
-    build_string(&(parameter->asn1_filename), filename, l4);
-    parameter->interface = interface;
+    parameter->name            = make_string("%s", param_name);
+    parameter->type            = make_string("%s", type);
+    parameter->asn1_module     = make_string("%s", module);
+    parameter->asn1_filename   = make_string("%s", filename);
+    parameter->interface       = interface;
     parameter->param_direction = param_in;
 
     Add_Param(&parameter, &(interface->in));
 }
 
 /* add an OUT parameter to the list */
-void Add_Out_Param(char *name, size_t l1, 
-                   char *type, size_t l2, 
-                   char *module, size_t l3,
-                   char *filename, size_t l4)
+void Add_Out_Param(char *name,
+                   char *type,
+                   char *module,
+                   char *filename)
 {
-    type = asn2underscore(type, l2);
+    type = asn2underscore(type, strlen(type));
 
     Create_Parameter(&parameter);
     assert (NULL != parameter && NULL != interface);
-    char *param_name = name;
+    char *param_name = make_string ("%s", name);
 
     if (0 == system_ast->context->keep_case) {
         // user does not want to keep case of the parameters
         param_name = string_to_lower(name);
     }
 
-    build_string(&(parameter->name), param_name, l1);
-    build_string(&(parameter->type), type, l2);
-    build_string(&(parameter->asn1_module), module, l3);
-    build_string(&(parameter->asn1_filename), filename, l4);
-    parameter->interface = interface;
+    parameter->name            = make_string ("%s", param_name);
+    parameter->type            = make_string ("%s", type);
+    parameter->asn1_module     = make_string ("%s", module);
+    parameter->asn1_filename   = make_string ("%s", filename);
+    parameter->interface       = interface;
     parameter->param_direction = param_out;
 
     Add_Param(&parameter, &(interface->out));

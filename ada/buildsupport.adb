@@ -8,6 +8,7 @@ with Ada.Strings.Unbounded,
      Ada.Command_Line,
      Ada.Text_IO,
      Ada.Containers.Indefinite_Vectors,
+     Interfaces.C,
      GNAT.OS_Lib,
      Errors,
      Locations,
@@ -33,6 +34,7 @@ with Ada.Strings.Unbounded,
 use Ada.Strings.Unbounded,
     Ada.Text_IO,
     Ada.Characters.Handling,
+    Interfaces.C,
     Locations,
     Ocarina.Namet,
     Ocarina.Types,
@@ -56,6 +58,7 @@ procedure BuildSupport is
 
    AADL_Language : Name_Id;
 
+   ms                : constant String := "ms";
    Interface_Root    : Node_Id := No_Node;
    Deployment_root   : Node_Id := No_Node;
    Dataview_root     : Node_ID := No_Node;
@@ -124,8 +127,6 @@ procedure BuildSupport is
    ----------------------------
 
    procedure Process_Interface_View (My_System : Node_Id) is
-      Len_Name          : Integer;
-      Len_Type          : Integer;
       Current_Function  : Node_Id;
       FV_Subco          : Node_Id;
       CI                : Node_Id;
@@ -153,21 +154,18 @@ procedure BuildSupport is
       if not Is_Empty (Subcomponents (My_System)) then
          --  Set the output directory
          if OutDir > 0 then
-            C_Set_OutDir (Ada.Command_Line.Argument (Outdir),
-                          Ada.Command_Line.Argument (Outdir)'Length);
+            C_Set_OutDir (To_C (Ada.Command_Line.Argument (Outdir)));
          end if;
 
          --  Set the stack value
          if Stack_Val > 0 then
-            C_Set_Stack (Ada.Command_Line.Argument (stack_val),
-                         Ada.Command_Line.Argument (stack_val)'Length);
+            C_Set_Stack (To_C (Ada.Command_Line.Argument (Stack_Val)));
          end if;
 
          --  Set the timer resolution value
          if Timer_Resolution > 0 then
             C_Set_Timer_Resolution
-              (Ada.Command_Line.Argument (Timer_Resolution),
-               Ada.Command_Line.Argument (Timer_Resolution)'Length);
+              (To_C (Ada.Command_Line.Argument (Timer_Resolution)));
          end if;
 
          --  Current_function is read from the list of system subcomponents
@@ -193,7 +191,7 @@ procedure BuildSupport is
                   SourceText : constant Name_Array := Get_Source_Text (CI);
                   ZipId : Name_Id := No_Name;
                begin
-                  C_New_FV (FV_Name_L, FV_Name'Length, FV_Name);
+                  C_New_FV (To_C (FV_Name_L), To_C (FV_Name));
 
                   case Source_Language is
                      when Language_Ada_95        => C_Set_Language_To_Ada;
@@ -229,24 +227,22 @@ procedure BuildSupport is
                      ZipId := SourceText (1);
                   end if;
                   if ZipId /= No_Name then
-                     C_Set_Zipfile (Get_Name_String (ZipId),
-                                    Get_Name_String (ZipId)'Length);
+                     C_Set_Zipfile (To_C (Get_Name_String (ZipId)));
                   end if;
                end;
 
                   declare
-                     InstanceOf : constant Name_Id :=
-                       Get_Instance_Of (CI);
+                     InstanceOf : constant Name_Id := Get_Instance_Of (CI);
                   begin
                      if InstanceOf /= No_Name then
-                        C_Set_Instance_Of (Get_Name_String (InstanceOf),
-                           Get_Name_String (InstanceOf)'Length);
+                        C_Set_Instance_Of
+                           (To_C (Get_Name_String (InstanceOf)));
                      end if;
                   end;
 
                   declare
                      IsComponent : constant Boolean :=
-                       Get_Is_Component_Type (CI);
+                        Get_Is_Component_Type (CI);
                   begin
                      if IsComponent then
                         C_Set_Is_Component_Type;
@@ -259,10 +255,8 @@ procedure BuildSupport is
                   begin
                      --  Iterate on the Function properties
                      for each in Properties.Iterate loop
-                        C_Set_Property (Property_Maps.Key (each),
-                                        Property_Maps.Key (each)'Length,
-                                        Property_Maps.Element (each),
-                                        Property_Maps.Element (each)'Length);
+                        C_Set_Property (To_C (Property_Maps.Key (each)),
+                                        To_C (Property_Maps.Element (each)));
                         --  Put_Line (Property_Maps.Key (each) & " : " &
                         --            Property_Maps.Element (each));
                      end loop;
@@ -317,13 +311,12 @@ procedure BuildSupport is
                               FS_File := US ("dummy");
                            end if;
                            C_Set_Context_Variable
-                                            (FS_name, FS_name'Length,
-                                             FS_type, FS_type'Length,
-                                             FS_value, FS_value'Length,
-                                             FS_module, FS_module'Length,
-                                             To_String (FS_file),
-                                             To_String (FS_file)'Length,
-                                             FS_Fullname);
+                                            (To_C (FS_name),
+                                             To_C (FS_type),
+                                             To_C (FS_value),
+                                             To_C (FS_module),
+                                             To_C (To_String (FS_file)),
+                                             To_C (FS_Fullname));
                         end;
                      end if;
                      FV_Subco := Next_Node (FV_Subco);
@@ -352,22 +345,20 @@ procedure BuildSupport is
                            begin
                               PI_Name := Get_Interface_Name (If_I);
                               if PI_Name /= No_Name then
-                                 C_Add_PI (Get_Name_String (PI_Name),
-                                          Get_Name_String (PI_Name)'Length);
+                                 C_Add_PI (To_C (Get_Name_String (PI_Name)));
                               else
                                  --  Keep compatibility with V1.2
-                                 if not Keep_case then
-                                    PI_string := to_lower (PI_string);
+                                 if not Keep_Case then
+                                    PI_string := To_Lower (PI_String);
                                  end if;
-                                 C_Add_PI (PI_String, PI_String'Length);
+                                 C_Add_PI (To_C (PI_String));
                               end if;
                            end;
 
                            if Kind (If_I) = K_Subcomponent_Access_Instance
-                              and then
-                              Is_Defined_Property
-                              (Corresponding_Instance (If_I),
-                              "taste::associated_queue_size")
+                              and then Is_Defined_Property
+                                (Corresponding_Instance (If_I),
+                                   "taste::associated_queue_size")
                            then
                               C_Set_Interface_Queue_Size
                                  (Get_Integer_Property
@@ -416,11 +407,11 @@ procedure BuildSupport is
                                        (First_Node (Sources (If_I)))));
                               begin
                                  C_Set_Compute_Time
-                                  (To_Milliseconds (Exec_Time (0)), "ms", 2,
-                                  To_Milliseconds (Exec_Time (1)), "ms", 2);
+                                  (To_Milliseconds (Exec_Time (0)), To_C (ms),
+                                   To_Milliseconds (Exec_Time (1)), To_C (ms));
                               end;
                            else
-                              C_Set_Compute_Time (0, "ms", 2, 0, "ms", 2);
+                              C_Set_Compute_Time (0, To_C (ms), 0, To_C (ms));
                               --  Default !
                            end if;
 
@@ -502,23 +493,15 @@ procedure BuildSupport is
                            --   (3) the name of the corresponding PI
                            if Present (Distant_FV) then
                               C_Add_RI
-                                 (Get_Name_String (Local_RI_Name),
-                                  Get_Name_String (Local_RI_Name)'Length,
-                                  Get_Name_String
-                                    (Name (Identifier (Distant_FV))),
-                                  Get_Name_String
-                                   (Name
-                                      (Identifier (Distant_FV)))'Length,
-                                  Get_Name_String (Distant_PI_Name),
-                                  Get_Name_String (Distant_PI_Name)'Length);
+                                 (To_C (Get_Name_String (Local_RI_Name)),
+                                  To_C (Get_Name_String
+                                    (Name (Identifier (Distant_FV)))),
+                                  To_C (Get_Name_String (Distant_PI_Name)));
                            else
                               C_Add_RI
-                                 (Get_Name_String (Local_RI_Name),
-                                  Get_Name_String (Local_RI_Name)'Length,
-                                  Get_Name_String (Local_RI_Name),
-                                  0,
-                                  Get_Name_String (Local_RI_Name),
-                                  Get_Name_String (Local_RI_Name)'Length);
+                                 (To_C (Get_Name_String (Local_RI_Name)),
+                                  To_C (""),
+                                  To_C (Get_Name_String (Local_RI_Name)));
                            end if;
 
                            case Operation_Kind is
@@ -562,10 +545,6 @@ procedure BuildSupport is
                                    (ASN1_Filename = No_Name,
                                     "Error: Source_Text not defined");
 
-                                 Len_Name := Get_Name_String
-                                   (Name (Identifier (Param_I)))'Length;
-                                 Len_Type := Get_Name_String
-                                   (Name (Identifier (Asntype)))'Length;
                                  ASN1_Module := Get_Ada_Package_Name
                                     (Asntype);
                                  Exit_On_Error
@@ -574,34 +553,22 @@ procedure BuildSupport is
 
                                  if Is_In (Param_I) then
                                     C_Add_In_Param
-                                      (Get_Name_String
+                                      (To_C (Get_Name_String
                                          (Display_Name
-                                             (Identifier (Param_I))),
-                                       Len_Name,
-                                       Get_Name_String
-                                         (Get_Type_Source_Name (Asntype)),
-                                       Len_Type,
-                                       Get_Name_String (ASN1_Module),
-                                       Get_Name_String
-                                          (ASN1_Module)'Length,
-                                       Get_Name_String (ASN1_Filename),
-                                       Get_Name_String
-                                          (ASN1_Filename)'Length);
+                                            (Identifier (Param_I)))),
+                                       To_C (Get_Name_String
+                                         (Get_Type_Source_Name (Asntype))),
+                                       To_C (Get_Name_String (ASN1_Module)),
+                                       To_C (Get_Name_String (ASN1_Filename)));
                                  else
                                     C_Add_Out_Param
-                                      (Get_Name_String
+                                      (To_C (Get_Name_String
                                          (Display_Name
-                                             (Identifier (Param_I))),
-                                       Len_Name,
-                                       Get_Name_String
-                                         (Get_Type_Source_Name (Asntype)),
-                                       Len_Type,
-                                       Get_Name_String (ASN1_Module),
-                                       Get_Name_String
-                                          (ASN1_Module)'Length,
-                                       Get_Name_String (ASN1_Filename),
-                                       Get_Name_String
-                                          (ASN1_Filename)'Length);
+                                             (Identifier (Param_I)))),
+                                       To_C (Get_Name_String
+                                         (Get_Type_Source_Name (Asntype))),
+                                       To_C (Get_Name_String (ASN1_Module)),
+                                       To_C (Get_Name_String (ASN1_Filename)));
                                  end if;
 
                                  --  Get the Encoding property:
@@ -615,8 +582,7 @@ procedure BuildSupport is
                                  end case;
 
                                  --  Get ASN.1 basic type of the parameter
-                                 Basic_type := Get_ASN1_Basic_Type
-                                    (Asntype);
+                                 Basic_type := Get_ASN1_Basic_Type (Asntype);
                                  case Basic_Type is
                                     pragma Style_Checks (Off);
                                     when Asn1_Sequence =>
@@ -666,29 +632,6 @@ procedure BuildSupport is
    end Process_Interface_View;
 
    -----------------------------
-   -- Process_DataView --
-   -----------------------------
-
---  procedure Process_DataView (My_Root : Node_Id) is
---     CI             : Node_Id;
---  begin
---     Subs := My_Root;
---     while Present (Subs) loop
---        CI := Subs;
---        if Get_Category_Of_Component (CI) = CC_Data then
---           declare
---              SourceText : constant Name_Array := Get_Source_Text (CI);
---           begin
---              if SourceText'Length > 0 then
---                 Put_Line (Get_Name_String (SourceText (1)));
---              end if;
---           end;
---        end if;
---        Subs := Next_Node (Subs);
---     end loop;
---  end Process_DataView;
-
-   -----------------------------
    -- Process_Deployment_View --
    -----------------------------
 
@@ -733,8 +676,7 @@ procedure BuildSupport is
                        (Corresponding_Declaration
                         (My_Root_System))));
             begin
-               C_Set_Root_node
-                   (My_Root_System_Name, My_Root_System_Name'Length);
+               C_Set_Root_node (To_C (My_Root_System_Name));
             end;
 
             if not Is_Empty (Subcomponents (My_Root_System)) then
@@ -771,23 +713,18 @@ procedure BuildSupport is
                                     (ATN.Namespace
                                        (Corresponding_Declaration (CI)))));
                            Pkg_Name := Name_Find;
-                           C_Add_Package
-                              (Get_Name_String (Pkg_Name),
-                              Get_Name_String (Pkg_Name)'Length);
+                           C_Add_Package (To_C (Get_Name_String (Pkg_Name)));
                            Set_Str_To_Name_Buffer ("");
                            Get_Name_String (Pkg_Name);
                            Add_Str_To_Name_Buffer ("::");
-                           Get_Name_String_And_Append
-                              (Name (Identifier (CI)));
+                           Get_Name_String_And_Append (Name (Identifier (CI)));
                            Bus_Classifier := Name_Find;
                         else
                            Bus_Classifier := Name (Identifier (CI));
                         end if;
                         C_New_Bus
-                         (Get_Name_String (Name (Identifier (Subs))),
-                          Get_Name_String (Name (Identifier (Subs)))'Length,
-                          Get_Name_String (Bus_Classifier),
-                          Get_Name_String (Bus_Classifier)'Length);
+                         (To_C (Get_Name_String (Name (Identifier (Subs)))),
+                          To_C (Get_Name_String (Bus_Classifier)));
                         C_End_Bus;
                      end;
                   end if;
@@ -836,8 +773,8 @@ procedure BuildSupport is
 
       for each of AADL_Lib loop
          Set_Str_To_Name_Buffer (each);
-         F := Ocarina.Files.Search_File (Name_Find);
-         Loc := Ocarina.Files.Load_File (F);
+         F         := Ocarina.Files.Search_File (Name_Find);
+         Loc       := Ocarina.Files.Load_File (F);
          Root_Tree := Ocarina.Parser.Parse (AADL_Language, Root_Tree, Loc);
       end loop;
    end Load_Deployment_View_Properties;
@@ -891,58 +828,23 @@ procedure BuildSupport is
                   Dst_Name := US (Get_Name_String (Display_Name
                                                   (Identifier (Dst_Port))));
                end if;
---             Put_Line (To_String (Src_Name) & " -> " & To_String (Dst_Name));
-               C_New_Connection
-                  (Get_Name_String
-                     (Name (Identifier
-                        (Parent_Subcomponent
-                           (Parent_Component (Src_Port))))),
-                   Get_Name_String
-                     (Name (Identifier
-                        (Parent_Subcomponent
-                           (Parent_Component (Src_Port)))))'Length,
-                   To_String (Src_Name),
-                   To_String (Src_Name)'Length,
-                   Get_Name_String (Bound_Bus_Name),
-                   Get_Name_String (Bound_Bus_Name)'Length,
-                   Get_Name_String
-                      (Name (Identifier
-                         (Parent_Subcomponent
-                            (Parent_Component (Dst_Port))))),
-                   Get_Name_String
-                      (Name (Identifier
-                         (Parent_Subcomponent
-                         (Parent_Component (Dst_Port)))))'Length,
-                   To_String (Dst_Name),
-                   To_String (Dst_Name)'Length);
+               declare
+                  Src_Sys : constant char_array :=
+                     To_C (Get_Name_String
+                        (Name (Identifier (Parent_Subcomponent
+                           (Parent_Component (Src_Port))))));
+                  Dest_Port : constant char_array :=
+                     To_C (Get_Name_String
+                        (Name (Identifier (Parent_Subcomponent
+                           (Parent_Component (Dst_Port))))));
+               begin
+                  C_New_Connection (Src_Sys,
+                                    To_C (To_String (Src_Name)),
+                                    To_C (Get_Name_String (Bound_Bus_Name)),
+                                    Dest_Port,
+                                    To_C (To_String (Dst_Name)));
+               end;
 
---               C_New_Connection
---                  (Get_Name_String
---                     (Name (Identifier
---                        (Parent_Subcomponent
---                           (Parent_Component (Src_Port))))),
---                   Get_Name_String
---                     (Name (Identifier
---                        (Parent_Subcomponent
---                           (Parent_Component (Src_Port)))))'Length,
---                   Get_Name_String
---                      (Display_Name (Identifier (Src_Port))),
---                   Get_Name_String
---                      (Display_Name (Identifier (Src_Port)))'Length,
---                   Get_Name_String (Bound_Bus_Name),
---                   Get_Name_String (Bound_Bus_Name)'Length,
---                   Get_Name_String
---                      (Name (Identifier
---                         (Parent_Subcomponent
---                            (Parent_Component (Dst_Port))))),
---                   Get_Name_String
---                      (Name (Identifier
---                         (Parent_Subcomponent
---                         (Parent_Component (Dst_Port)))))'Length,
---                   Get_Name_String
---                         (Display_Name (Identifier (Dst_Port))),
---                   Get_Name_String
---                         (Display_Name (Identifier (Dst_Port)))'Length);
                C_End_Connection;
             end if;
             Conn := Next_Node (Conn);
@@ -966,15 +868,11 @@ procedure BuildSupport is
                   Accessed_Bus_Name          : Name_Id   := No_Name;
                   Accessed_Port_Name         : Name_Id   := No_Name;
                   Device_Configuration       : Name_Id   := No_Name;
-                  Device_Configuration_Len   : Integer   := 0;
                   Device_ASN1_Filename       : Name_Id   := No_Name;
-                  Device_ASN1_Filename_Len   : Integer   := 0;
                   Device_Implementation      : Node_Id   := No_Node;
                   Configuration_Data         : Node_Id   := No_Node;
                   Device_ASN1_Typename       : Name_Id   := No_Name;
-                  Device_ASN1_Typename_Len   : Integer   := 0;
                   Device_ASN1_Module         : Name_Id   := No_Name;
-                  Device_ASN1_Module_Len     : Integer   := 0;
                begin
 
                   Device_Implementation := Get_Implementation (Tmp_CI);
@@ -993,9 +891,6 @@ procedure BuildSupport is
                            Device_ASN1_Typename :=
                               (Get_String_Property
                                  (Configuration_Data, "type_source_name"));
-
-                           Device_ASN1_Typename_Len :=
-                              Get_Name_String (Device_ASN1_Typename)'Length;
                            declare
                               ST : constant Name_Array
                                  := Get_Source_Text (Configuration_Data);
@@ -1014,9 +909,6 @@ procedure BuildSupport is
                                  then
                                     Device_ASN1_Filename := Get_String_Name
                                        (Name_Buffer (1 .. Name_Len));
-                                    Device_ASN1_Filename_Len :=
-                                       Get_Name_String
-                                          (Device_ASN1_Filename)'Length;
                                  end if;
                               end loop;
 
@@ -1037,10 +929,6 @@ procedure BuildSupport is
                      else
                         Device_ASN1_Module := Get_String_Name ("nomod");
                      end if;
-
-                     Device_ASN1_Module_Len :=
-                       Get_Name_String (Device_ASN1_Module)'Length;
-
                   else
                      Exit_On_Error (true,
                              "[ERROR] Device configuration is incorrect (" &
@@ -1060,9 +948,7 @@ procedure BuildSupport is
                        (ATN.Namespace
                         (Corresponding_Declaration (Tmp_CI)))));
                      Pkg_Name := Name_Find;
-                     C_Add_Package
-                        (Get_Name_String (Pkg_Name),
-                         Get_Name_String (Pkg_Name)'Length);
+                     C_Add_Package (To_C (Get_Name_String (Pkg_Name)));
                      Set_Str_To_Name_Buffer ("");
                      Get_Name_String (Pkg_Name);
                      Add_Str_To_Name_Buffer ("::");
@@ -1093,9 +979,6 @@ procedure BuildSupport is
                      Device_Configuration := Get_String_Name ("noconf");
                   end if;
 
-                  Device_Configuration_Len := Get_Name_String
-                    (Device_Configuration)'Length;
-
                   Find_Connected_Bus (Tmp_CI, Accessed_Bus, Accessed_Port);
                   if Accessed_Bus /= No_Node and then
                      Accessed_Port /= No_Node and then
@@ -1105,25 +988,16 @@ procedure BuildSupport is
                      Accessed_Port_Name := Name (Identifier (Accessed_Port));
 
                      C_New_Device
-                        (Get_Name_String (Name (Identifier (Processes))),
-                         Get_Name_String
-                           (Name (Identifier (Processes)))'Length,
-                         Get_Name_String (Device_Classifier),
-                         Get_Name_String (Device_Classifier)'Length,
-                         Get_Name_String (Associated_Processor_Name),
-                         Get_Name_String (Associated_Processor_Name)'Length,
-                         Get_Name_String (Device_Configuration),
-                         Device_Configuration_Len,
-                         Get_Name_String (Accessed_Bus_Name),
-                         Get_Name_String (Accessed_Bus_Name)'Length,
-                         Get_Name_String (Accessed_Port_Name),
-                         Get_Name_String (Accessed_Port_Name)'Length,
-                         Get_Name_String (Device_ASN1_Filename),
-                         Device_ASN1_Filename_Len,
-                         Get_Name_String (Device_ASN1_Typename),
-                         Device_ASN1_Typename_Len,
-                         Get_Name_String (Device_ASN1_Module),
-                         Device_ASN1_Module_Len);
+                        (To_C
+                           (Get_Name_String (Name (Identifier (Processes)))),
+                         To_C (Get_Name_String (Device_Classifier)),
+                         To_C (Get_Name_String (Associated_Processor_Name)),
+                         To_C (Get_Name_String (Device_Configuration)),
+                         To_C (Get_Name_String (Accessed_Bus_Name)),
+                         To_C (Get_Name_String (Accessed_Port_Name)),
+                         To_C (Get_Name_String (Device_ASN1_Filename)),
+                         To_C (Get_Name_String (Device_ASN1_Typename)),
+                         To_C (Get_Name_String (Device_ASN1_Module)));
                      C_End_Device;
                   else
                      Exit_On_Error (True,
@@ -1174,9 +1048,7 @@ procedure BuildSupport is
                               (ATN.Namespace
                                  (Corresponding_Declaration (CPU)))));
                      Pkg_Name := Name_Find;
-                     C_Add_Package
-                        (Get_Name_String (Pkg_Name),
-                        Get_Name_String (Pkg_Name)'Length);
+                     C_Add_Package (To_C (Get_Name_String (Pkg_Name)));
                      Set_Str_To_Name_Buffer ("");
                      Get_Name_String (Pkg_Name);
                      Add_Str_To_Name_Buffer ("::");
@@ -1187,43 +1059,26 @@ procedure BuildSupport is
                   end if;
 
                   C_New_Processor
-                     (Get_Name_String (CPU_Name),
-                     Get_Name_String (CPU_Name)'Length,
-                     Get_Name_String (CPU_Classifier),
-                     Get_Name_String (CPU_Classifier)'Length,
-                     Supported_Execution_Platform'Image (CPU_Platform),
-                     Supported_Execution_Platform'Image (CPU_Platform)'Length,
+                     (To_C (Get_Name_String (CPU_Name)),
+                      To_C (Get_Name_String (CPU_Classifier)),
+                      To_C (Supported_Execution_Platform'Image (CPU_Platform)),
                      (if Env_Vars /= No_Name then
-                          Get_Name_String (Env_Vars)
-                      else ""),
-                     (if Env_Vars /= No_Name then
-                        Get_Name_String (Env_Vars)'Length
-                      else 0),
+                          To_C (Get_Name_String (Env_Vars))
+                      else To_C ("")),
                      (if User_CFlags /= No_Name then
-                         Get_Name_String (User_CFlags)
-                      else ""),
-                     (if User_CFlags /= No_Name then
-                         Get_Name_String (User_CFlags)'Length
-                      else 0),
+                         To_C (Get_Name_String (User_CFlags))
+                      else To_C ("")),
                      (if User_LdFlags /= No_Name then
-                          Get_Name_String (User_LdFlags)
-                      else ""),
-                     (if User_LdFlags /= No_Name then
-                        Get_Name_String (User_LdFlags)'Length
-                      else 0));
+                          To_C (Get_Name_String (User_LdFlags))
+                      else To_C ("")));
 
                   C_New_Process
-                     (Get_Name_String
+                     (To_C (Get_Name_String
                         (ATN.Name
                            (ATN.Component_Type_Identifier
-                              (Corresponding_Declaration (Tmp_CI)))),
-                      Get_Name_String
-                        (ATN.Name
-                           (ATN.Component_Type_Identifier
-                              (Corresponding_Declaration (Tmp_CI))))'Length,
-                     Get_Name_String (Name (Identifier (Processes))),
-                     Get_Name_String (Name (Identifier (Processes)))'Length,
-                     NodeName, NodeName'Length,
+                              (Corresponding_Declaration (Tmp_CI))))),
+                     To_C (Get_Name_String (Name (Identifier (Processes)))),
+                     To_C (NodeName),
                      Boolean'Pos (Node_Coverage));
 
                   Processes2 := First_Node (Subcomponents (My_System));
@@ -1259,8 +1114,7 @@ procedure BuildSupport is
                               end;
 
                               C_Add_Binding
-                                 (To_String (Bound_APLC_Name),
-                                  To_String (Bound_APLC_Name)'Length);
+                                 (To_C (To_String (Bound_APLC_Name)));
                            end;
                         end if;
                      end if;
@@ -1484,9 +1338,7 @@ procedure BuildSupport is
       FN := Ocarina.Files.Search_File (Name_Find);
       Exit_On_Error (FN = No_Name, "Error: Missing Interface view!");
       B := Ocarina.Files.Load_File (FN);
-      C_Set_Interfaceview
-       (Ada.Command_Line.Argument (Interface_View),
-        Ada.Command_Line.Argument (Interface_View)'Length);
+      C_Set_Interfaceview (To_C (Ada.Command_Line.Argument (Interface_View)));
       Interface_Root := Ocarina.Parser.Parse
         (AADL_Language, Interface_Root, B);
 
@@ -1519,9 +1371,7 @@ procedure BuildSupport is
          FN := Ocarina.Files.Search_File (Name_Find);
 
          Exit_On_Error (FN = No_Name, "Cannot find Data View");
-         C_Set_Dataview
-            (Ada.Command_Line.Argument (Data_View),
-            Ada.Command_Line.Argument (Data_View)'Length);
+         C_Set_Dataview (To_C (Ada.Command_Line.Argument (Data_View)));
          B := Ocarina.Files.Load_File (FN);
          Interface_Root := Ocarina.Parser.Parse
            (AADL_Language, Interface_Root, B);

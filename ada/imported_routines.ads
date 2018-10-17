@@ -3,153 +3,100 @@
 --  LGPL license, see LICENSE file
 
 with Ocarina.Types; use Ocarina.Types;
+with Interfaces.C;  use Interfaces.C;
 --  with Types; use Types;
 
 package Imported_Routines is
 
-   procedure C_Set_OutDir (Dir : String; Len : Integer);
-   procedure C_Set_Stack  (Val : String; Len : Integer);
-   procedure C_Set_Timer_Resolution  (Val : String; Len : Integer);
-   procedure C_New_APLC   (Arg : String; Len : Integer);
-   procedure C_New_FV     (Arg : String; Len : Integer; CS : String);
+   procedure C_Set_OutDir (Dir : char_array);
+   procedure C_Set_Stack  (Val : char_array);
+   procedure C_Set_Timer_Resolution  (Val : char_array);
+   procedure C_New_APLC   (Arg : char_array);
+   procedure C_New_FV     (Arg : char_array; CS : char_array);
 
    procedure C_Set_PolyORBHI_C;
 
-   procedure C_Add_PI (Arg : String;
-                       Len : Integer);
+   procedure C_Add_PI (Arg : char_array);
 
-   procedure C_Add_RI (Arg : String;
-                       Len : Integer;
-                       DistFV : String;
-                       DLen : Integer;
-                       DistName : String;
-                       DistNameLen : Integer);
+   procedure C_Add_RI (Arg : char_array;
+                       DistFV : char_array;
+                       DistName : char_array);
 
-   procedure C_Set_Property (Name    : String;
-                             Len     : Integer;
-                             Val     : String;
-                             Val_Len : Integer);
+   procedure C_Set_Property (Name    : char_array;
+                             Val     : char_array);
 
-   procedure C_Set_Distant_APLC (Arg : String; Len : Integer);
+   procedure C_Set_Distant_APLC (Arg : char_array);
    procedure C_End_IF;
    procedure C_End_FV;
 
-   procedure C_Set_Root_Node (Arg : String; Len : Integer);
+   procedure C_Set_Root_Node (Arg : char_array);
 
-   procedure C_New_Process (Arg           : String;
-                            Len           : Integer;
-                            Id            : String;
-                            LenId         : Integer;
-                            Node_Name     : String;
-                            Len_Node      : Integer;
+   procedure C_New_Process (Arg           : char_array;
+                            Id            : char_array;
+                            Node_Name     : char_array;
                             Coverage      : Integer);
 
-   procedure C_New_Processor (Name           : String;
-                              Name_Len       : Integer;
-                              Classifier     : String;
-                              Classifier_Len : Integer;
-                              Platform       : String;
-                              Platform_Len   : Integer;
-                              EnvVars        : String;
-                              EnvVars_Len    : Integer;
-                              CFflags        : String;
-                              CFlags_Len     : Integer;
-                              LdFlags        : String;
-                              LdFlags_Len    : Integer);
+   procedure C_New_Processor (Name           : char_array;
+                              Classifier     : char_array;
+                              Platform       : char_array;
+                              EnvVars        : char_array;
+                              CFflags        : char_array;
+                              LdFlags        : char_array);
 
-   procedure C_New_Bus (Name           : String;
-                        Name_Len       : Integer;
-                        Classifier     : String;
-                        Classifier_Len : Integer);
+   procedure C_New_Bus (Name           : char_array;
+                        Classifier     : char_array);
 
-   procedure C_New_Device (Name                         : String;
-                           Name_Len                     : Integer;
-                           Classifier                   : String;
-                           Classifier_Len               : Integer;
-                           Associated_Processor         : String;
-                           Associated_Processor_Len     : Integer;
-                           Configuration                : String;
-                           Configuration_Len            : Integer;
-                           Accessed_Bus                 : String;
-                           Accessed_Bus_Len             : Integer;
-                           Access_Port                  : String;
-                           Access_Port_Len              : Integer;
-                           Asn1_Filename                : String;
-                           Asn1_Filename_Len            : Integer;
-                           Asn1_Typename                : String;
-                           Asn1_Typename_Len            : Integer;
-                           Asn1_Modulename              : String;
-                           Asn1_Modulename_Len          : Integer);
+   procedure C_New_Device (Name                         : char_array;
+                           Classifier                   : char_array;
+                           Associated_Processor         : char_array;
+                           Configuration                : char_array;
+                           Accessed_Bus                 : char_array;
+                           Access_Port                  : char_array;
+                           Asn1_Filename                : char_array;
+                           Asn1_Typename                : char_array;
+                           Asn1_Modulename              : char_array);
 
-   procedure C_New_Connection (Src_System          : String;
-                               Src_System_Length   : Integer;
-                               Src_Port            : String;
-                               Src_Port_Length     : Integer;
-                               Bus                 : String;
-                               Bus_Length          : Integer;
-                               Dst_System          : String;
-                               Dst_System_Length   : Integer;
-                               Dst_Port            : String;
-                               Dst_Port_Length     : Integer);
+   procedure C_New_Connection (Src_System          : char_array;
+                               Src_Port            : char_array;
+                               Bus                 : char_array;
+                               Dst_System          : char_array;
+                               Dst_Port            : char_array);
 
-   procedure C_Add_Binding (Arg : String; Len : Integer);
+   procedure C_Add_Binding (Arg : char_array);
    procedure C_End_Process;
    procedure C_End_Bus;
    procedure C_End_Device;
    procedure C_End_Connection;
    procedure C_Add_In_Param
-     (name     : String;
-      Len1     : Integer;
-      partype  : String;
-      Len2     : Integer;
-      module   : String;
-      Len3     : Integer;
-      filename : String;
-      Len4     : Integer);
+     (name     : char_array;
+      partype  : char_array;
+      module   : char_array;
+      filename : char_array);
    procedure C_Add_Out_Param
-     (name     : String;
-      Len1     : Integer;
-      partype  : String;
-      Len2     : Integer;
-      module   : String;
-      Len3     : Integer;
-      filename : String;
-      Len4     : Integer);
-   procedure C_Add_Package
-     (Name    : String;
-      Len     : Integer);
+     (name     : char_array;
+      partype  : char_array;
+      module   : char_array;
+      filename : char_array);
+   procedure C_Add_Package (Name : char_array);
    procedure C_Set_Compute_Time
      (Lower_Bound    : Unsigned_Long_Long;
-      Lower_Unit     : String;
-      Len2           : Integer;
+      Lower_Unit     : char_array;
       Upper_Bound    : Unsigned_Long_Long;
-      Upper_Unit     : String;
-      Len4           : Integer);
+      Upper_Unit     : char_array);
    procedure C_Set_Context_Variable
-     (varName : String;
-      nameLen : Integer;
-      varType : String;
-      typeLen : Integer;
-      varVal  : String;
-      valLen  : Integer;
-      varMod  : String;
-      modLen  : Integer;
-      varFile : String;
-      fileLen : Integer;
-      fullName : String);
+     (varName : char_array;
+      varType : char_array;
+      varVal  : char_array;
+      varMod  : char_array;
+      varFile : char_array;
+      fullName : char_array);
    procedure C_Set_Period (Period : Unsigned_Long_Long);
    procedure C_Set_Interface_Queue_Size (Size : Unsigned_Long_Long);
    procedure C_Set_Glue;
    procedure C_Set_SMP2;
-   procedure C_Set_Interfaceview
-     (name : String;
-      len  : Integer);
-   procedure C_Set_Dataview
-     (name : String;
-      len  : Integer);
-   procedure C_Set_Zipfile
-      (name : String;
-       len  : Integer);
+   procedure C_Set_Interfaceview (Name : char_array);
+   procedure C_Set_Dataview (Name : char_array);
+   procedure C_Set_Zipfile (Name : char_array);
    procedure C_Set_Gateway;
    procedure C_Keep_case;
    procedure C_Set_Test;
@@ -204,9 +151,7 @@ package Imported_Routines is
    procedure C_Set_Debug_Messages;
    procedure C_New_Drivers_Section;
    procedure C_End_Drivers_Section;
-   procedure C_Set_Instance_Of
-      (component : String;
-       len  : Integer);
+   procedure C_Set_Instance_Of (Component : char_array);
    procedure C_Set_Is_Component_Type;
 
 private

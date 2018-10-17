@@ -223,8 +223,8 @@ void write_thread_implementation(FV *fv)
    FOREACH(p, Process, get_system_ast()->processes, {
        FOREACH(b, Aplc_binding, p->bindings, {
            if (b->fv == fv &&
-	       ((!strcmp(p->cpu->platform_name, "PLATFORM_NATIVE"))
-		|| (!strcmp(p->cpu->platform_name, "PLATFORM_LINUX_DLL")))) {
+               ((!strcmp(p->cpu->platform_name, "PLATFORM_NATIVE"))
+                || (!strcmp(p->cpu->platform_name, "PLATFORM_LINUX_DLL")))) {
                stack_size = 100;
            }
        });
@@ -1001,7 +1001,7 @@ void Generate_Full_ConcurrencyView(Process_list *processes, char *root_node)
       FOREACH (p, Process, processes, {
         GenerateProcessRefinement(p);
 
-	FOREACH(b, Device, p->drivers, {
+        FOREACH(b, Device, p->drivers, {
                 char *driver_no_underscore =
                         underscore_to_dash (b->name, strlen (b->name));
                 fprintf(process,

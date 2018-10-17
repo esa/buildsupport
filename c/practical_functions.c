@@ -209,22 +209,17 @@ char *build_string(char **str, char *text_to_add, size_t length)
     char *old_string = NULL;
 
     if (NULL == *str) {
+        fflush(stdout);
         *str = (char *) malloc(length + 1);
-        if (NULL == *str) {
-            return NULL;
-        }
+        assert (NULL != *str);
         memcpy(*str, text_to_add, length);
         (*str)[length] = '\0';
     } else {
         old_string = (char *) malloc(strlen(*str) + 1);
-        if (NULL == old_string) {
-            return NULL;
-        }
+        assert (NULL != old_string);
         strcpy(old_string, *str);
         *str = (char *) realloc(*str, strlen(*str) + length + 1);
-        if (NULL == *str) {
-            return NULL;
-        }
+        assert (NULL != *str);
         strcpy(*str, old_string);
         strncat(*str, text_to_add, length);
         (*str)[strlen(old_string) + length] = '\0';

@@ -50,7 +50,7 @@ FV *Add_timer_manager(Process *node, FV_list *fv_with_timer)
 
     name = make_string ("%s_timer_manager", node->name);
 
-    fv = (FV *) New_FV (name, strlen(name), name);
+    fv = (FV *) New_FV (name, name);
 
     Set_Language_To_C();
 
@@ -79,7 +79,7 @@ FV *Add_timer_manager(Process *node, FV_list *fv_with_timer)
 
     /* Add the new FV to the binding list of the Process */
     Set_Current_Process (node);
-    Add_Binding(name, strlen(name));
+    Add_Binding(name);
 
    /* Create a file called "_hook" to add this function
     * to the orchestrator work */
@@ -341,7 +341,7 @@ void Add_Artificial_Function (Interface *duplicate_pi,
    /* 1) Create a new FV called fv_name (argument of the function)
     *    and set 2 interfaces to it (PI and RI) */
 
-   new_fv = (FV *) New_FV (fv_name, strlen(fv_name), fv_name);
+   new_fv = (FV *) New_FV (fv_name, fv_name);
    /*
       Setting the language to blackbox_device allows to avoid generating
       unnecessary code for VT-created threads (vm_if, invoke_ri, dataview glue)
@@ -384,7 +384,7 @@ void Add_Artificial_Function (Interface *duplicate_pi,
    }
 
    Set_Current_Process (fv->process);
-   Add_Binding(fv_name, strlen(fv_name));
+   Add_Binding(fv_name);
 
    /* 3) Create a file called "_hook" to add this function
     *    to the orchestrator work */
@@ -839,7 +839,7 @@ void Add_api(Process *node, FV_list *all_fv)
 
     name = make_string("%s_taste_api", node->name);
 
-    fv = New_FV(name, strlen(name), name);
+    fv = New_FV(name, name);
     assert (NULL != fv);
 
     if(get_context()->polyorb_hi_c) {
@@ -899,7 +899,7 @@ void Add_api(Process *node, FV_list *all_fv)
 
     /* Add the new FV to the binding list of the Process */
     Set_Current_Process (node);
-    Add_Binding(name, strlen(name));
+    Add_Binding(name);
 
    /* Create a file called "_hook" to add this function
     * to the orchestrator work */
@@ -1157,7 +1157,7 @@ void Preprocess_coverage (Process *node)
 
     name = make_string ("%s_coverage_collector", node->name);
 
-    fv = (FV *) New_FV (name, strlen(name), name);
+    fv = (FV *) New_FV (name, name);
 
     Set_Language_To_C();
 
@@ -1187,7 +1187,7 @@ void Preprocess_coverage (Process *node)
 
     /* Add the new FV to the binding list of the Process */
     Set_Current_Process (node);
-    Add_Binding(name, strlen(name));
+    Add_Binding(name);
 
    /* 3) Create a file called "_hook" to add this function
     *    to the orchestrator work */
@@ -1363,7 +1363,6 @@ void Preprocessing_Backend (System *s)
         FV          *caller = NULL;
         FV          *callee = NULL;
         Interface   *ri     = NULL;
-
         /* Find the FV of the caller */
         FOREACH (fv, FV, get_system_ast()->functions, {
             if (!strcmp (fv->name, cnt->dst_system) && (true != fv->is_component_type)) caller = fv;
@@ -1386,23 +1385,24 @@ void Preprocessing_Backend (System *s)
         if (passive_runtime == caller->runtime_nature && NULL != callee) {
             FOREACH (ct, FV, caller->calling_threads, {
                 New_Connection (
-                    callee->name,   strlen (callee->name),
-                    cnt->src_port,    strlen (cnt->src_port),
-                    cnt->bus,       strlen (cnt->bus),
-                    ct->name,       strlen (ct->name),
-                    cnt->dst_port,    strlen (cnt->dst_port)
+                    callee->name,
+                    cnt->src_port,
+                    cnt->bus,
+                    ct->name,
+                    cnt->dst_port
                 );
                 APPEND_TO_LIST (Connection, new_connections, Get_Connection());
             });
             APPEND_TO_LIST (Connection, connections_to_remove, cnt);
         }
         else if (NULL != callee && strcmp (callee->name, cnt->src_system)) {
+            printf("5b\n");
                 New_Connection (
-                    callee->name,     strlen (callee->name),
-                    cnt->src_port,    strlen (cnt->src_port),
-                    cnt->bus,         strlen (cnt->bus),
-                    caller->name,     strlen (caller->name),
-                    cnt->dst_port,    strlen (cnt->dst_port)
+                    callee->name,
+                    cnt->src_port,
+                    cnt->bus,
+                    caller->name,
+                    cnt->dst_port
                 );
                 APPEND_TO_LIST (Connection, new_connections, Get_Connection());
                 APPEND_TO_LIST (Connection, connections_to_remove, cnt);
