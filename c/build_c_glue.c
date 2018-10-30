@@ -104,6 +104,11 @@ void c_preamble(FV * fv)
                    "    if (!init) {\n"
                    "        init = 1;\n");
 
+    if (brave_fpga) {
+        fprintf(vm_if,
+                   "       init_%s_Brave_Fpga();\n", fv->name);
+    }
+
     /* Call the user-defined startup function (or GUI startup)
      * Except for Ada functions - that have startup in elaboration */
     if (ada != fv->language && qgenada != fv->language && qgenc != fv->language) {
@@ -565,70 +570,86 @@ void add_RI_to_c_invoke_ri(Interface * i)
         fprintf(invoke_ri, ");\n\n");
 
     } else {
-
-        /* d. For each IN and OUT params, declare a static buffer to put encoded data */
-        if (NULL != i->in) {
-            fprintf(invoke_ri,
-                    "    /* Buffer(s) to put the encoded input parameter(s) */\n");
-        }
-        FOREACH(p, Parameter, i->in, {
-            fprintf(invoke_ri,
-                    "    static char IN_buf_%s[%sasn1Scc%s%s] = {0};\n    int size_IN_buf_%s=0;\n",
-                    p->name,
-                    (native == p->encoding) ? "sizeof(" : "",
-                    p->type,
-                    (native == p->encoding) ? ")" :
-                    (uper == p->encoding) ? "_REQUIRED_BYTES_FOR_ENCODING" :
-                    "_REQUIRED_BYTES_FOR_ACN_ENCODING",
-                    p->name);
+        // Set a boolean to allow skipping all the encoding section and make
+        // a direct call to the other end in case of (un)protected calls when
+        // all parameters are encoded natively. This saves buffer space.
+        bool sync_and_native = (asynch != i->synchronism);
+        FOREACH (p, Parameter, i->in, {
+            if(native != p->encoding) sync_and_native = false;
+        });
+        FOREACH (p, Parameter, i->out, {
+            if(native != p->encoding) sync_and_native = false;
         });
 
-        if (NULL != i->out) {
-            fprintf(invoke_ri,
-                    "\n    /* Buffer(s) for the output parameter(s) */\n");
+        if (!sync_and_native) {
+
+            /* d. For each IN and OUT params, declare a static buffer to put encoded data */
+            if (NULL != i->in) {
+                fprintf(invoke_ri,
+                        "    /* Buffer(s) to put the encoded input parameter(s) */\n");
+            }
+            FOREACH(p, Parameter, i->in, {
+                fprintf(invoke_ri,
+                        "    static char IN_buf_%s[%sasn1Scc%s%s] = {0};\n    int size_IN_buf_%s=0;\n",
+                        p->name,
+                        (native == p->encoding) ? "sizeof(" : "",
+                        p->type,
+                        (native == p->encoding) ? ")" :
+                        (uper == p->encoding) ? "_REQUIRED_BYTES_FOR_ENCODING" :
+                        "_REQUIRED_BYTES_FOR_ACN_ENCODING",
+                        p->name);
+            });
+
+            if (NULL != i->out) {
+                fprintf(invoke_ri,
+                        "\n    /* Buffer(s) for the output parameter(s) */\n");
+            }
+            FOREACH(p, Parameter, i->out, {
+                fprintf(invoke_ri,
+                        "    static char OUT_buf_%s[%sasn1Scc%s%s];\n    size_t size_OUT_buf_%s=0;\n",
+                        p->name,
+                        (native == p->encoding) ? "sizeof(" : "",
+                        p->type,
+                        (native == p->encoding) ? ")" :
+                        (uper == p->encoding) ? "_REQUIRED_BYTES_FOR_ENCODING" :
+                        "_REQUIRED_BYTES_FOR_ACN_ENCODING",
+                        p->name);
+            });
+
+            /* e. Encode each IN param */
+            if (NULL != i->in) {
+                fprintf(invoke_ri, "\n    /* Encode each input parameter */\n");
+            }
+
+            FOREACH(p, Parameter, i->in, {
+                fprintf(invoke_ri,
+                        "    size_IN_buf_%s = Encode_%s_%s(IN_buf_%s, %sasn1Scc%s%s, IN_%s);\n"
+                        "    if (-1 == size_IN_buf_%s) {\n"
+                        "#ifdef __unix__\n"
+                        "        printf (\"** Encoding error in %s_RI_%s!!\\n\");\n"
+                        "#endif\n"
+                        "        /* Crash the application due to message loss */\n"
+                        "        extern void abort (void);\n"
+                        "        abort();\n"
+                        "    }\n",
+                        p->name,
+                        BINARY_ENCODING(p),
+                        p->type, p->name,
+                        (native == p->encoding) ? "sizeof(" : "",
+                        p->type,
+                        (native == p->encoding) ? ")" :
+                        (uper == p->encoding) ? "_REQUIRED_BYTES_FOR_ENCODING" :
+                        "_REQUIRED_BYTES_FOR_ACN_ENCODING",
+                        p->name,
+                        p->name,
+                        i->parent_fv->name,
+                        i->name);
+            });
         }
-        FOREACH(p, Parameter, i->out, {
+        else {
             fprintf(invoke_ri,
-                    "    static char OUT_buf_%s[%sasn1Scc%s%s];\n    size_t size_OUT_buf_%s=0;\n",
-                    p->name,
-                    (native == p->encoding) ? "sizeof(" : "",
-                    p->type,
-                    (native == p->encoding) ? ")" :
-                    (uper == p->encoding) ? "_REQUIRED_BYTES_FOR_ENCODING" :
-                    "_REQUIRED_BYTES_FOR_ACN_ENCODING",
-                    p->name);
-        });
-
-        /* e. Encode each IN param */
-        if (NULL != i->in) {
-            fprintf(invoke_ri, "\n    /* Encode each input parameter */\n");
+                    "    // Native encoding and synchronous RI, send parameters as is\n\n");
         }
-
-        FOREACH(p, Parameter, i->in, {
-            fprintf(invoke_ri,
-                    "    size_IN_buf_%s = Encode_%s_%s(IN_buf_%s, %sasn1Scc%s%s, IN_%s);\n"
-                    "    if (-1 == size_IN_buf_%s) {\n"
-                    "#ifdef __unix__\n"
-                    "        printf (\"** Encoding error in %s_RI_%s!!\\n\");\n"
-                    "#endif\n"
-                    "        /* Crash the application due to message loss */\n"
-                    "        extern void abort (void);\n"
-                    "        abort();\n"
-                    "    }\n",
-                    p->name,
-                    BINARY_ENCODING(p),
-                    p->type, p->name,
-                    (native == p->encoding) ? "sizeof(" : "",
-                    p->type,
-                    (native == p->encoding) ? ")" :
-                    (uper == p->encoding) ? "_REQUIRED_BYTES_FOR_ENCODING" :
-                    "_REQUIRED_BYTES_FOR_ACN_ENCODING",
-                    p->name,
-                    p->name,
-                    i->parent_fv->name,
-                    i->name);
-        });
-
 
         /* f. Add a call to the vm callback function passing the encoded
          *  inputs as parameters */
