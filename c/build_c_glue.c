@@ -104,6 +104,11 @@ void c_preamble(FV * fv)
                    "    if (!init) {\n"
                    "        init = 1;\n");
 
+    if (brave_fpga) {		
+        fprintf(vm_if,
+                "       init_%s_Brave_Fpga();\n", fv->name);
+    }
+
     /* Call the user-defined startup function (or GUI startup)
      * Except for Ada functions - that have startup in elaboration */
     if (ada != fv->language && qgenada != fv->language && qgenc != fv->language) {
