@@ -40,7 +40,8 @@ void Generate_Python_AST(System *s, char *dest_directory, char *output_name)
             "    'language': %s,\n"
             "    'zipfile': '%s',\n"
             "    'interfaces': {},\n"
-            "    'functional_states' : {}\n"
+            "    'functional_states' : {},\n"
+            "    'aadl_properties' : {}\n"
             "}",
                 fv->name,
                 fv->nameWithCase,
@@ -68,7 +69,16 @@ void Generate_Python_AST(System *s, char *dest_directory, char *output_name)
                    cp->type.asn1_filename
                );
            }
-        }); 
+        });
+
+        /* Add user defined properties such as FPGA_Configuration */ 
+        FOREACH(prop, AADL_Property, fv->properties, {
+           fprintf (py,
+               "\n\nfunctions['%s']['aadl_properties']['%s'] = '%s'\n",
+               fv->name,
+               prop->name,
+               prop->value);
+        });
 
         FOREACH(i, Interface, fv->interfaces, {
             fprintf (py,
