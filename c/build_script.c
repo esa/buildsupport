@@ -230,6 +230,14 @@ void Create_script()
                      "else\n"
                      "    OUTPUTDIR=binary\n"
                      "fi\n\n"
+                     "NO_BITFILE=\"\"\n"
+                     "while getopts :-: o\n"
+                     "do\n"
+                     "case \"$o$OPTARG\"\n"
+                     "in\n"
+                     "(-no-bitfile) NO_BITFILE=\"--no-bitfile\";;\n"
+                     "esac\n"
+                     "done\n\n"
                      "cd \"$CWD\" && assert-builder-ocarina.py \\\n"
                      "\t--fast \\\n"
                      "\t$DEBUG_MODE \\\n");
@@ -240,6 +248,8 @@ void Create_script()
         fprintf (script, "\t--aadlv2 \\\n");
     if (get_context()->keep_case)
         fprintf (script, "\t--keep-case \\\n");
+
+    fprintf (script, "\t$NO_BITFILE \\\n");
 
     fprintf (script, "\t--interfaceView \"$INTERFACEVIEW\" \\\n");
 
