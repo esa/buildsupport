@@ -512,9 +512,8 @@ void add_RI_to_c_invoke_ri(Interface * i)
                 "        long long msc_time = getTimeInMilliseconds();\n\n");
         FOREACH(p, Parameter, i->in, {
             fprintf(invoke_ri,
-                    "        {\n"
                     "            PrintASN1%s (\"INNERDATA: %s::%s::%s\", IN_%s);\n"
-                    "        }\n",
+                    "            puts(\"\"); // add newline\n",
                     p->type,
                     i->name,
                     p->type,
