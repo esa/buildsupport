@@ -520,8 +520,12 @@ void add_RI_to_c_invoke_ri(Interface * i)
                     p->name,
                     p->name);
         });
+        if (NULL == i-> in) {
+            fprintf(invoke_ri,
+                "        puts(\"\");\n");
+        }
         fprintf(invoke_ri,
-                "        printf (\"\\nINNER: %s,%s,%s,%%lld\\n\", msc_time);\n"
+                "        printf (\"INNER: %s,%s,%s,%%lld\\n\", msc_time);\n"
                 "        fflush(stdout);\n"
                 "    }\n",
                 sender_id, receiver_id, i->name);
