@@ -60,6 +60,7 @@ void ada_wrappers_preamble(FV * fv)
 {
     int hasparam = 0;
     int mix = 0;
+    bool has_async_ri = false;
 
     if (NULL == ads || NULL == adb)
         return;
@@ -73,19 +74,26 @@ void ada_wrappers_preamble(FV * fv)
     fprintf(adb,
             "--  This file was generated automatically: DO NOT MODIFY IT !\n\n");
     fprintf(adb,
-            "--  pragma Style_Checks (Off);\n"
-            "--  pragma Warnings (Off);\n\n"
-            "with PolyORB_HI_Generated.Activity,\n"
-            "     PolyORB_HI.Utils;\n"
-            "use  PolyORB_HI_Generated.Activity,\n"
-            "     PolyORB_HI.Utils;\n\n");
+            "with PolyORB_HI.Utils;\n"
+            "use  PolyORB_HI.Utils;\n");
+
+    /* Generates "with PolyORB_HI.Generated.Activity if there is at least one async RI */
+    FOREACH(i, Interface, fv->interfaces, {
+        if (RI == i->direction && asynch == i->synchronism) has_async_ri = true;
+    });
+
+    if (has_async_ri) {
+        fprintf(adb,
+            "with PolyORB_HI_Generated.Activity;\n"
+            "use  PolyORB_HI_Generated.Activity;\n");
+    }
 
 
     fprintf(ads, "with Interfaces.C;\n");
     /* Generates "with PolyORB_HI.Generated.Types IF at least one async IF has a param */
     FOREACH(i, Interface, fv->interfaces, {
         CheckForParams(i, &hasparam);
-    })
+    });
     if (hasparam) {
         fprintf(ads, "with PolyORB_HI_Generated.Types;\n");
     }

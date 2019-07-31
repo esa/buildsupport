@@ -960,13 +960,30 @@ void Add_api(Process *node, FV_list *all_fv)
                          "package %s is\n",
                          fv->name);
 
-        fprintf (code,   "--  TASTE API (do not edit this code manually)\n"
-                         "with PolyORB_HI_Generated.Activity,\n"
-                         "     PolyORB_HI_Generated.Deployment;\n"
-                         "use  PolyORB_HI_Generated.Activity,\n"
-                         "     PolyORB_HI_Generated.Deployment;\n\n"
-                         "package body %s is\n",
-                         fv->name);
+        // check if Generated.Activity is needed, ie. if there is at least
+        // one sporadic pi
+        bool needs_activity = false;
+        FOREACH(function, FV, all_fv, {
+            FOREACH(pi, Interface, function->interfaces, {
+                if(PI == pi->direction && asynch == pi->synchronism
+                   && cyclic != pi->rcm && NULL != Find_All_Calling_FV(pi)) {
+                    needs_activity = true;
+                }
+            });
+        });
+
+        fprintf (code, "--  TASTE API (do not edit this code manually)\n");
+
+        if (needs_activity) {
+            fprintf (code, "with PolyORB_HI_Generated.Activity;\n"
+                           "use  PolyORB_HI_Generated.Activity;\n");
+        }
+
+        fprintf (code, "with PolyORB_HI_Generated.Deployment;\n"
+                       "use  PolyORB_HI_Generated.Deployment;\n\n"
+                       "package body %s is\n",
+                       fv->name);
+
     }
     FOREACH(function, FV, all_fv, {
         if (false == function->is_component_type) {
