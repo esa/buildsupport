@@ -492,6 +492,11 @@ void add_RI_to_c_invoke_ri(Interface * i)
      * name, as it was entered by the user in the interface view */
     if (NULL != i->distant_fv) {
         receiver_FV = FindFV(i->distant_fv);
+        if (NULL == receiver_FV) {
+            printf("[ERROR] Unconnected RIs are not supported (check RI '%s'"
+                    " in function '%s')\n", i->name, i->parent_fv->name);
+            exit(-1);
+        }
 
         if (true == receiver_FV->artificial) {
             receiver_id = receiver_FV->original_name;
