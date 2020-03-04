@@ -1342,6 +1342,14 @@ procedure BuildSupport is
       Interface_Root := Ocarina.Parser.Parse
         (AADL_Language, Interface_Root, B);
 
+      --  Parse taste AADL library and join it to the interface view
+      Set_Str_To_Name_Buffer ("taste_properties.aadl");
+      FN := Ocarina.Files.Search_File (Name_Find);
+      Exit_On_Error (FN = No_Name, "File not found: taste_properties.aadl");
+      B := Ocarina.Files.Load_File (FN);
+      Interface_Root := Ocarina.Parser.Parse
+        (AADL_Language, Interface_Root, B);
+
       if Concurrency_view = 0 and Generate_Glue then
          Put_Line ("Fatal error: Missing Deployment view!");
          Put_Line ("Use the '-c file.aadl' parameter.");
