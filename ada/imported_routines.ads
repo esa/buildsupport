@@ -1,12 +1,12 @@
 --  *************************** buildsupport ****************************  --
---  (c) 2015 European Space Agency - maxime.perrotin@esa.int
+--  (c) 2015-2020 European Space Agency - maxime.perrotin@esa.int
 --  LGPL license, see LICENSE file
 
-with Ocarina.Types; use Ocarina.Types;
-with Interfaces.C;  use Interfaces.C;
---  with Types; use Types;
+with Ocarina.Types;
+with Interfaces.C;
 
 package Imported_Routines is
+   use Interfaces.C;
 
    procedure C_Set_OutDir (Dir : char_array);
    procedure C_Set_Stack  (Val : char_array);
@@ -79,9 +79,9 @@ package Imported_Routines is
       filename : char_array);
    procedure C_Add_Package (Name : char_array);
    procedure C_Set_Compute_Time
-     (Lower_Bound    : Unsigned_Long_Long;
+     (Lower_Bound    : Ocarina.Types.Unsigned_Long_Long;
       Lower_Unit     : char_array;
-      Upper_Bound    : Unsigned_Long_Long;
+      Upper_Bound    : Ocarina.Types.Unsigned_Long_Long;
       Upper_Unit     : char_array);
    procedure C_Set_Context_Variable
      (varName : char_array;
@@ -90,8 +90,9 @@ package Imported_Routines is
       varMod  : char_array;
       varFile : char_array;
       fullName : char_array);
-   procedure C_Set_Period (Period : Unsigned_Long_Long);
-   procedure C_Set_Interface_Queue_Size (Size : Unsigned_Long_Long);
+   procedure C_Set_Period (Period : Ocarina.Types.Unsigned_Long_Long);
+   procedure C_Set_Interface_Queue_Size
+       (Size : Ocarina.Types.Unsigned_Long_Long);
    procedure C_Set_Glue;
    procedure C_Set_SMP2;
    procedure C_Set_Interfaceview (Name : char_array);

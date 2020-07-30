@@ -29,8 +29,8 @@ ifeq ($(UNAME), Linux)
 		fi ;                                    \
 	fi
 endif
-	@#[ "$(DEBIAN)" != "" ] && [ $(ARCH) == 64 ] && EXTRAFLAG="--target=x86_64-linux" ; \
-
+	# Define a gprbuild default configuration to avoid compiling with llvm
+	gprconfig --batch --target=x86_64-pc-linux-gnu  --config=C,,,,GCC --config=C++,,,,G++
 	OCARINA_PATH=`ocarina-config --prefix` \
             $(gnatpath)gprbuild -x -g $(exec) -p -P buildsupport.gpr -XBUILD="debug" $$EXTRAFLAG -j4
 
