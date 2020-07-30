@@ -30,7 +30,7 @@ ifeq ($(UNAME), Linux)
 	fi
 endif
 	# Define a gprbuild default configuration to avoid compiling with llvm
-	gprconfig --batch --target=x86_64-pc-linux-gnu  --config=C,,,,GCC --config=C++,,,,G++
+	gprconfig --batch --config=Ada,,default,,GNAT --config=C,,default,,GCC --config=C++,,default,,G++
 	OCARINA_PATH=`ocarina-config --prefix` \
             $(gnatpath)gprbuild -x -g $(exec) -p -P buildsupport.gpr -XBUILD="debug" $$EXTRAFLAG -j4
 
