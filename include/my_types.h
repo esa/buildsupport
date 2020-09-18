@@ -244,6 +244,7 @@ typedef struct t_fv {
   struct                 t_system *system_ast;
   Nature                 runtime_nature;
   Language               language;
+  Language               original_language;  // keep track of SDL
   char                   *zipfile;
   Interface_list         *interfaces;
   struct t_process       *process;

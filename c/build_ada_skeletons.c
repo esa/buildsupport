@@ -426,7 +426,8 @@ void GW_Ada_Backend(FV * fv)
     if (fv->system_ast->context->onlycv)
         return;
 
-    if (ada == fv->language || qgenada == fv->language) {
+    if ((ada == fv->language && sdl != fv->original_language)
+            || qgenada == fv->language) {
 
         /* Create the files and add headers */
         Init_Ada_GW_Backend(fv);
